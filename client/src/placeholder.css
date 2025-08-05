@@ -1,0 +1,22 @@
+.is-empty::before {
+  content: attr(data-placeholder);
+  color: #aaa;
+  float: left;
+  height: 0;
+  pointer-events: none;
+  font-style: italic;
+  margin-left: 0px; /* 기본값 */
+}
+
+/* 특정 placeholder 텍스트에 따라 margin-left 적용 */
+.is-empty[data-placeholder*="[margin:1]"]::before {
+  margin-left: 30px;
+}
+
+.is-empty[data-placeholder*="[margin:2]"]::before {
+  margin-left: 40px;
+}
+
+.is-empty[data-placeholder*="[margin:3]"]::before {
+  margin-left: 60px;
+}
