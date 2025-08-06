@@ -317,8 +317,8 @@ export default function App() {
             ...this.parent?.(),
             style: {
               default: null,
-              parseHTML: element => element.getAttribute('style'),
-              renderHTML: attributes => {
+              parseHTML: (element) => element.getAttribute("style"),
+              renderHTML: (attributes) => {
                 if (!attributes.style) {
                   return {};
                 }
@@ -340,8 +340,8 @@ export default function App() {
             ...this.parent?.(),
             style: {
               default: null,
-              parseHTML: element => element.getAttribute('style'),
-              renderHTML: attributes => {
+              parseHTML: (element) => element.getAttribute("style"),
+              renderHTML: (attributes) => {
                 if (!attributes.style) {
                   return {};
                 }
@@ -369,21 +369,21 @@ export default function App() {
       Image.configure({
         inline: false,
         HTMLAttributes: {
-          class: 'resizable-image',
+          class: "resizable-image",
         },
       }).extend({
         addNodeView() {
           return ReactNodeViewRenderer(ResizableImage);
         },
-        
+
         addAttributes() {
           return {
             ...this.parent?.(),
             width: {
-              default: 'auto',
-              parseHTML: element => element.getAttribute('width'),
-              renderHTML: attributes => {
-                if (!attributes.width || attributes.width === 'auto') {
+              default: "auto",
+              parseHTML: (element) => element.getAttribute("width"),
+              renderHTML: (attributes) => {
+                if (!attributes.width || attributes.width === "auto") {
                   return {};
                 }
                 return {
@@ -392,10 +392,10 @@ export default function App() {
               },
             },
             height: {
-              default: 'auto',
-              parseHTML: element => element.getAttribute('height'),
-              renderHTML: attributes => {
-                if (!attributes.height || attributes.height === 'auto') {
+              default: "auto",
+              parseHTML: (element) => element.getAttribute("height"),
+              renderHTML: (attributes) => {
+                if (!attributes.height || attributes.height === "auto") {
                   return {};
                 }
                 return {
@@ -581,70 +581,647 @@ export default function App() {
     };
   }, [colorPicker.show, tableMenu.show]);
 
-  // 테이블 호버 시 간단한 + 버튼 표시 (디버깅용)
+  // 간소화된 테이블 컨트롤
   useEffect(() => {
     if (!editor) return;
 
-    const handleTableHover = (e) => {
-      if (e.target.closest('.compact-table')) {
-        console.log('테이블 호버됨!');
-        
-        // 기존 버튼들 제거
-        document.querySelectorAll('.debug-table-button').forEach(btn => btn.remove());
-        
-        const table = e.target.closest('.compact-table');
-        const tableRect = table.getBoundingClientRect();
-        
-        // 테스트 버튼 생성
-        const testButton = document.createElement('button');
-        testButton.className = 'debug-table-button';
-        testButton.innerHTML = '+';
-        testButton.style.cssText = `
-          position: fixed;
-          left: ${tableRect.left - 30}px;
-          top: ${tableRect.top}px;
-          width: 25px;
-          height: 25px;
-          background-color: #3b82f6;
-          color: white;
-          border: none;
-          border-radius: 50%;
+    let currentButtons = [];
+    let isTableHovered = false;
+    let selectedRow = null;
+    let selectedColumn = null;
+    let hoveredCell = null;
+
+    const showButtons = (table) => {
+      // 기존 버튼들 제거
+      currentButtons.forEach((btn) => btn.remove());
+      currentButtons = [];
+
+      const tableRect = table.getBoundingClientRect();
+
+      // 행 추가 영역 (테이블 전체 하단)
+      const addRowArea = document.createElement("div");
+      addRowArea.className = "table-control-button add-row-area";
+      addRowArea.innerHTML = "<span>+</span>";
+      addRowArea.style.cssText = `
+        position: fixed;
+        left: ${tableRect.left}px;
+        top: ${tableRect.bottom + 2}px;
+        width: ${tableRect.width}px;
+        height: 20px;
+        background-color: rgba(16, 185, 129, 0.1);
+        border: 1px dashed #10b981;
+        cursor: pointer;
+        z-index: 9999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+        color: #10b981;
+        font-weight: bold;
+        transition: all 0.2s ease;
+        pointer-events: auto;
+      `;
+
+      addRowArea.addEventListener("mouseenter", () => {
+        addRowArea.style.backgroundColor = "rgba(16, 185, 129, 0.2)";
+        isTableHovered = true;
+      });
+
+      addRowArea.addEventListener("mouseleave", () => {
+        addRowArea.style.backgroundColor = "rgba(16, 185, 129, 0.1)";
+        setTimeout(() => {
+          if (!isTableHovered) {
+            currentButtons.forEach((btn) => btn.remove());
+            currentButtons = [];
+          }
+        }, 100);
+      });
+
+      addRowArea.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        // 마지막 행의 첫 번째 셀 클릭
+        const lastRow = table.querySelector("tr:last-child");
+        const firstCell = lastRow?.querySelector("td, th");
+        if (firstCell) {
+          firstCell.click();
+          setTimeout(() => {
+            editor.chain().focus().addRowAfter().run();
+          }, 10);
+        }
+      });
+
+      // 열 추가 영역 (테이블 전체 우측)
+      const addColArea = document.createElement("div");
+      addColArea.className = "table-control-button add-col-area";
+      addColArea.innerHTML = "<span>+</span>";
+      addColArea.style.cssText = `
+        position: fixed;
+        left: ${tableRect.right + 2}px;
+        top: ${tableRect.top}px;
+        width: 20px;
+        height: ${tableRect.height}px;
+        background-color: rgba(139, 92, 246, 0.1);
+        border: 1px dashed #8b5cf6;
+        cursor: pointer;
+        z-index: 9999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+        color: #8b5cf6;
+        font-weight: bold;
+        writing-mode: vertical-rl;
+        transition: all 0.2s ease;
+        pointer-events: auto;
+      `;
+
+      addColArea.addEventListener("mouseenter", () => {
+        addColArea.style.backgroundColor = "rgba(139, 92, 246, 0.2)";
+        isTableHovered = true;
+      });
+
+      addColArea.addEventListener("mouseleave", () => {
+        addColArea.style.backgroundColor = "rgba(139, 92, 246, 0.1)";
+        setTimeout(() => {
+          if (!isTableHovered) {
+            currentButtons.forEach((btn) => btn.remove());
+            currentButtons = [];
+          }
+        }, 100);
+      });
+
+      addColArea.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        // 첫 번째 행의 마지막 셀 클릭
+        const firstRow = table.querySelector("tr:first-child");
+        const lastCell = firstRow?.querySelector("td:last-child, th:last-child");
+        if (lastCell) {
+          lastCell.click();
+          setTimeout(() => {
+            editor.chain().focus().addColumnAfter().run();
+          }, 10);
+        }
+      });
+
+      document.body.appendChild(addRowArea);
+      document.body.appendChild(addColArea);
+      currentButtons.push(addRowArea, addColArea);
+    };
+
+    const showCellControls = (cell, table) => {
+      // 기존 셀 컨트롤들 제거
+      document.querySelectorAll(".cell-delete-button, .row-color-palette, .col-color-palette").forEach((btn) => btn.remove());
+
+      if (!cell || !table || !cell.closest || typeof cell.closest !== "function") return;
+
+      const row = cell.closest("tr");
+      if (!row) return;
+
+      const rowIndex = Array.from(table.querySelectorAll("tr")).indexOf(row);
+      const colIndex = Array.from(row.children).indexOf(cell);
+
+      const cellRect = cell.getBoundingClientRect();
+      const tableRect = table.getBoundingClientRect();
+
+      // 색상 팔레트 정의
+      const colors = [
+        { name: "기본", bg: "transparent", color: "#374151" },
+        { name: "회색", bg: "#f3f4f6", color: "#374151" },
+        { name: "빨강", bg: "#fecaca", color: "#7f1d1d" },
+        { name: "파랑", bg: "#dbeafe", color: "#1e3a8a" },
+        { name: "초록", bg: "#d1fae5", color: "#14532d" },
+        { name: "노랑", bg: "#fef3c7", color: "#92400e" },
+      ];
+
+      // 행 컬러 팔레트 (행 맨 우측)
+      const rowColorPalette = document.createElement("div");
+      rowColorPalette.className = "row-color-palette";
+      rowColorPalette.style.cssText = `
+        position: fixed;
+        left: ${tableRect.right + 5}px;
+        top: ${cellRect.top + cellRect.height / 2 - 15}px;
+        display: flex;
+        gap: 3px;
+        background: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 6px;
+        padding: 4px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        z-index: 9999;
+        pointer-events: auto;
+      `;
+
+      colors.forEach((color) => {
+        const colorBtn = document.createElement("button");
+        colorBtn.style.cssText = `
+          width: 16px;
+          height: 16px;
+          background-color: ${color.bg === "transparent" ? "#ffffff" : color.bg};
+          border: 1px solid #d1d5db;
+          border-radius: 3px;
           cursor: pointer;
-          font-size: 14px;
-          z-index: 9999;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+          transition: transform 0.1s ease;
         `;
-        
-        testButton.addEventListener('click', (e) => {
+
+        colorBtn.addEventListener("mouseenter", () => {
+          colorBtn.style.transform = "scale(1.2)";
+        });
+
+        colorBtn.addEventListener("mouseleave", () => {
+          colorBtn.style.transform = "scale(1)";
+        });
+
+        colorBtn.addEventListener("click", (e) => {
           e.preventDefault();
           e.stopPropagation();
-          console.log('테스트 버튼 클릭됨!');
-          editor.chain().focus().addRowAfter().run();
+
+          console.log("행 색상 버튼 클릭됨:", color, row);
+
+          // TipTap을 통해 행의 모든 셀에 색상 적용
+          const cells = row.querySelectorAll("td, th");
+          console.log("행의 셀 개수:", cells.length);
+
+          cells.forEach((cell, idx) => {
+            try {
+              // TipTap의 posAtDOM을 사용해서 셀 위치 찾기
+              const pos = editor.view.posAtDOM(cell, 0);
+              const resolvedPos = editor.state.doc.resolve(pos);
+
+              // 셀 노드 찾기
+              for (let depth = resolvedPos.depth; depth >= 0; depth--) {
+                const node = resolvedPos.node(depth);
+                if (node.type.name === "tableCell" || node.type.name === "tableHeader") {
+                  const cellPos = resolvedPos.start(depth) - 1;
+
+                  // 기존 스타일 파싱
+                  const existingStyle = node.attrs.style || "";
+                  const styleObj = {};
+
+                  if (existingStyle) {
+                    existingStyle.split(";").forEach((rule) => {
+                      const [prop, value] = rule.split(":").map((s) => s.trim());
+                      if (prop && value) {
+                        styleObj[prop] = value;
+                      }
+                    });
+                  }
+
+                  // 색상 업데이트
+                  if (color.bg === "transparent") {
+                    delete styleObj["background-color"];
+                  } else {
+                    styleObj["background-color"] = color.bg;
+                  }
+                  styleObj["color"] = color.color;
+
+                  // 스타일 문자열로 변환
+                  const newStyle = Object.entries(styleObj)
+                    .map(([prop, value]) => `${prop}: ${value}`)
+                    .join("; ");
+
+                  const attrs = {
+                    ...node.attrs,
+                    style: newStyle,
+                  };
+
+                  console.log(`셀 ${idx} TipTap 속성 업데이트:`, attrs);
+
+                  // TipTap을 통해 속성 업데이트
+                  editor.view.dispatch(editor.state.tr.setNodeMarkup(cellPos, null, attrs));
+
+                  break;
+                }
+              }
+            } catch (error) {
+              console.error(`셀 ${idx} 색상 적용 오류:`, error);
+
+              // TipTap 방식이 실패하면 직접 DOM 조작
+              if (color.bg === "transparent") {
+                cell.style.setProperty("background-color", "", "important");
+              } else {
+                cell.style.setProperty("background-color", color.bg, "important");
+              }
+              cell.style.setProperty("color", color.color, "important");
+            }
+          });
+
+          // 팔레트 제거
+          document.querySelectorAll(".row-color-palette, .col-color-palette").forEach((p) => p.remove());
         });
-        
-        document.body.appendChild(testButton);
-        
-        console.log('테스트 버튼 생성됨');
+
+        // 투명 색상 표시
+        if (color.bg === "transparent") {
+          const line = document.createElement("div");
+          line.style.cssText = `
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 10px;
+            height: 1px;
+            background-color: #ef4444;
+            transform: translate(-50%, -50%) rotate(45deg);
+          `;
+          colorBtn.style.position = "relative";
+          colorBtn.appendChild(line);
+        }
+
+        rowColorPalette.appendChild(colorBtn);
+      });
+
+      // 행 삭제 버튼 (셀 왼쪽)
+      const rowDeleteBtn = document.createElement("button");
+      rowDeleteBtn.className = "cell-delete-button row-delete-btn";
+      rowDeleteBtn.innerHTML = "−";
+      rowDeleteBtn.style.cssText = `
+        position: fixed;
+        left: ${tableRect.left - 25}px;
+        top: ${cellRect.top + cellRect.height / 2 - 10}px;
+        width: 20px;
+        height: 20px;
+        background-color: #ef4444;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: bold;
+        z-index: 9999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        pointer-events: auto;
+        transition: all 0.2s ease;
+      `;
+
+      // 열 컬러 팔레트 (열 맨 하단)
+      const colColorPalette = document.createElement("div");
+      colColorPalette.className = "col-color-palette";
+      colColorPalette.style.cssText = `
+        position: fixed;
+        left: ${cellRect.left + cellRect.width / 2 - 50}px;
+        top: ${tableRect.bottom + 5}px;
+        display: flex;
+        gap: 3px;
+        background: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 6px;
+        padding: 4px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        z-index: 9999;
+        pointer-events: auto;
+      `;
+
+      colors.forEach((color) => {
+        const colorBtn = document.createElement("button");
+        colorBtn.style.cssText = `
+          width: 16px;
+          height: 16px;
+          background-color: ${color.bg === "transparent" ? "#ffffff" : color.bg};
+          border: 1px solid #d1d5db;
+          border-radius: 3px;
+          cursor: pointer;
+          transition: transform 0.1s ease;
+        `;
+
+        colorBtn.addEventListener("mouseenter", () => {
+          colorBtn.style.transform = "scale(1.2)";
+        });
+
+        colorBtn.addEventListener("mouseleave", () => {
+          colorBtn.style.transform = "scale(1)";
+        });
+
+        colorBtn.addEventListener("click", (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+
+          console.log("열 색상 버튼 클릭됨:", color, colIndex);
+
+          // TipTap을 통해 열의 모든 셀에 색상 적용
+          const rows = table.querySelectorAll("tr");
+          console.log("테이블의 행 개수:", rows.length);
+
+          rows.forEach((tableRow, rowIdx) => {
+            const targetCell = tableRow.children[colIndex];
+            if (targetCell) {
+              try {
+                // TipTap의 posAtDOM을 사용해서 셀 위치 찾기
+                const pos = editor.view.posAtDOM(targetCell, 0);
+                const resolvedPos = editor.state.doc.resolve(pos);
+                
+                // 셀 노드 찾기
+                for (let depth = resolvedPos.depth; depth >= 0; depth--) {
+                  const node = resolvedPos.node(depth);
+                  if (node.type.name === "tableCell" || node.type.name === "tableHeader") {
+                    const cellPos = resolvedPos.start(depth) - 1;
+                    
+                    // 기존 스타일 파싱
+                    const existingStyle = node.attrs.style || "";
+                    const styleObj = {};
+                    
+                    if (existingStyle) {
+                      existingStyle.split(";").forEach((rule) => {
+                        const [prop, value] = rule.split(":").map((s) => s.trim());
+                        if (prop && value) {
+                          styleObj[prop] = value;
+                        }
+                      });
+                    }
+                    
+                    // 색상 업데이트
+                    if (color.bg === "transparent") {
+                      delete styleObj["background-color"];
+                    } else {
+                      styleObj["background-color"] = color.bg;
+                    }
+                    styleObj["color"] = color.color;
+                    
+                    // 스타일 문자열로 변환
+                    const newStyle = Object.entries(styleObj)
+                      .map(([prop, value]) => `${prop}: ${value}`)
+                      .join("; ");
+                    
+                    const attrs = {
+                      ...node.attrs,
+                      style: newStyle,
+                    };
+                    
+                    console.log(`행 ${rowIdx}, 열 ${colIndex} TipTap 속성 업데이트:`, attrs);
+                    
+                    // TipTap을 통해 속성 업데이트
+                    editor.view.dispatch(editor.state.tr.setNodeMarkup(cellPos, null, attrs));
+                    
+                    break;
+                  }
+                }
+              } catch (error) {
+                console.error(`행 ${rowIdx}, 열 ${colIndex} 색상 적용 오류:`, error);
+                
+                // TipTap 방식이 실패하면 직접 DOM 조작
+                if (color.bg === "transparent") {
+                  targetCell.style.setProperty("background-color", "", "important");
+                } else {
+                  targetCell.style.setProperty("background-color", color.bg, "important");
+                }
+                targetCell.style.setProperty("color", color.color, "important");
+              }
+            } else {
+              console.log(`행 ${rowIdx}에서 열 ${colIndex} 셀을 찾을 수 없음`);
+            }
+          });
+
+          // 팔레트 제거
+          document.querySelectorAll(".row-color-palette, .col-color-palette").forEach((p) => p.remove());
+        });
+
+        // 투명 색상 표시
+        if (color.bg === "transparent") {
+          const line = document.createElement("div");
+          line.style.cssText = `
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 10px;
+            height: 1px;
+            background-color: #ef4444;
+            transform: translate(-50%, -50%) rotate(45deg);
+          `;
+          colorBtn.style.position = "relative";
+          colorBtn.appendChild(line);
+        }
+
+        colColorPalette.appendChild(colorBtn);
+      });
+
+      // 열 삭제 버튼 (셀 위쪽, 좀 더 아래로)
+      const colDeleteBtn = document.createElement("button");
+      colDeleteBtn.className = "cell-delete-button col-delete-btn";
+      colDeleteBtn.innerHTML = "−";
+      colDeleteBtn.style.cssText = `
+        position: fixed;
+        left: ${cellRect.left + cellRect.width / 2 - 10}px;
+        top: ${tableRect.top - 15}px;
+        width: 20px;
+        height: 20px;
+        background-color: #ef4444;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: bold;
+        z-index: 9999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        pointer-events: auto;
+        transition: all 0.2s ease;
+      `;
+
+      // 버튼 호버 상태를 유지하기 위한 이벤트들
+      let isButtonHovered = false;
+
+      // 행 삭제 이벤트
+      rowDeleteBtn.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        // 행 하이라이트 효과
+        row.style.backgroundColor = "#fecaca";
+        row.style.transition = "all 0.3s ease";
+
+        // 해당 행의 첫 번째 셀 클릭하여 커서 위치 설정
+        const firstCell = row.querySelector("td, th");
+        if (firstCell) {
+          firstCell.click();
+          setTimeout(() => {
+            editor.chain().focus().deleteRow().run();
+            // 버튼 제거
+            document.querySelectorAll(".cell-delete-button").forEach((btn) => btn.remove());
+          }, 100);
+        }
+      });
+
+      // 열 삭제 이벤트
+      colDeleteBtn.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        // 열 하이라이트 효과
+        table.querySelectorAll("tr").forEach((tableRow) => {
+          const targetCell = tableRow.children[colIndex];
+          if (targetCell) {
+            targetCell.style.backgroundColor = "#fecaca";
+            targetCell.style.transition = "all 0.3s ease";
+          }
+        });
+
+        // 해당 열의 셀 클릭하여 커서 위치 설정
+        cell.click();
+        setTimeout(() => {
+          editor.chain().focus().deleteColumn().run();
+          // 버튼 제거
+          document.querySelectorAll(".cell-delete-button").forEach((btn) => btn.remove());
+        }, 100);
+      });
+
+      // 버튼 호버 효과
+      rowDeleteBtn.addEventListener("mouseenter", () => {
+        isButtonHovered = true;
+        rowDeleteBtn.style.backgroundColor = "#dc2626";
+        rowDeleteBtn.style.transform = "scale(1.1)";
+        // 해당 행 미리보기 하이라이트
+        row.style.backgroundColor = "rgba(239, 68, 68, 0.1)";
+      });
+
+      rowDeleteBtn.addEventListener("mouseleave", () => {
+        isButtonHovered = false;
+        rowDeleteBtn.style.backgroundColor = "#ef4444";
+        rowDeleteBtn.style.transform = "scale(1)";
+        row.style.backgroundColor = "";
+        // 버튼이 호버 상태가 아니면 일정 시간 후 제거
+        setTimeout(() => {
+          if (!isButtonHovered && !isTableHovered) {
+            document.querySelectorAll(".cell-delete-button, .row-color-palette, .col-color-palette").forEach((btn) => btn.remove());
+          }
+        }, 200);
+      });
+
+      colDeleteBtn.addEventListener("mouseenter", () => {
+        isButtonHovered = true;
+        colDeleteBtn.style.backgroundColor = "#dc2626";
+        colDeleteBtn.style.transform = "scale(1.1)";
+        // 해당 열 미리보기 하이라이트
+        table.querySelectorAll("tr").forEach((tableRow) => {
+          const targetCell = tableRow.children[colIndex];
+          if (targetCell) {
+            targetCell.style.backgroundColor = "rgba(239, 68, 68, 0.1)";
+          }
+        });
+      });
+
+      colDeleteBtn.addEventListener("mouseleave", () => {
+        isButtonHovered = false;
+        colDeleteBtn.style.backgroundColor = "#ef4444";
+        colDeleteBtn.style.transform = "scale(1)";
+        // 열 하이라이트 제거
+        table.querySelectorAll("tr").forEach((tableRow) => {
+          const targetCell = tableRow.children[colIndex];
+          if (targetCell) {
+            targetCell.style.backgroundColor = "";
+          }
+        });
+        // 버튼이 호버 상태가 아니면 일정 시간 후 제거
+        setTimeout(() => {
+          if (!isButtonHovered && !isTableHovered) {
+            document.querySelectorAll(".cell-delete-button, .row-color-palette, .col-color-palette").forEach((btn) => btn.remove());
+          }
+        }, 200);
+      });
+
+      // 컬러 팔레트들을 DOM에 추가
+      document.body.appendChild(rowColorPalette);
+      document.body.appendChild(colColorPalette);
+      document.body.appendChild(rowDeleteBtn);
+      document.body.appendChild(colDeleteBtn);
+      currentButtons.push(rowColorPalette, colColorPalette, rowDeleteBtn, colDeleteBtn);
+    };
+
+    const hideButtons = () => {
+      setTimeout(() => {
+        if (!isTableHovered) {
+          currentButtons.forEach((btn) => btn.remove());
+          currentButtons = [];
+          document.querySelectorAll(".cell-delete-button, .row-color-palette, .col-color-palette").forEach((btn) => btn.remove());
+        }
+      }, 300);
+    };
+
+    const handleMouseEnter = (e) => {
+      if (!e.target || typeof e.target.closest !== "function") return;
+
+      const table = e.target.closest("table");
+      if (table) {
+        console.log("테이블 진입!");
+        isTableHovered = true;
+        showButtons(table);
+
+        // 셀 호버 시 컨트롤 버튼들 표시
+        const cell = e.target.closest("td, th");
+        if (cell && cell !== hoveredCell) {
+          hoveredCell = cell;
+          showCellControls(cell, table);
+        }
       }
     };
 
-    const handleTableLeave = (e) => {
-      if (!e.relatedTarget || !e.relatedTarget.closest('.compact-table')) {
-        console.log('테이블 벗어남');
-        document.querySelectorAll('.debug-table-button').forEach(btn => btn.remove());
+    const handleMouseLeave = (e) => {
+      if (!e.target || typeof e.target.closest !== "function") return;
+
+      const table = e.target.closest("table");
+      const isLeavingToButton = e.relatedTarget && typeof e.relatedTarget.closest === "function" ? e.relatedTarget.closest(".table-control-button, .cell-delete-button, .row-color-palette, .col-color-palette") : false;
+      const isLeavingToTable = e.relatedTarget && typeof e.relatedTarget.closest === "function" ? e.relatedTarget.closest("table") : false;
+
+      if (table && !isLeavingToTable && !isLeavingToButton) {
+        console.log("테이블 벗어남!");
+        isTableHovered = false;
+        hoveredCell = null;
+        hideButtons();
       }
     };
 
-    document.addEventListener('mouseenter', handleTableHover, true);
-    document.addEventListener('mouseleave', handleTableLeave, true);
-    
+    document.addEventListener("mouseenter", handleMouseEnter, true);
+    document.addEventListener("mouseleave", handleMouseLeave, true);
+
     return () => {
-      document.removeEventListener('mouseenter', handleTableHover, true);
-      document.removeEventListener('mouseleave', handleTableLeave, true);
-      document.querySelectorAll('.debug-table-button').forEach(btn => btn.remove());
+      document.removeEventListener("mouseenter", handleMouseEnter, true);
+      document.removeEventListener("mouseleave", handleMouseLeave, true);
+      currentButtons.forEach((btn) => btn.remove());
+      document.querySelectorAll(".cell-delete-button, .row-color-palette, .col-color-palette").forEach((btn) => btn.remove());
     };
   }, [editor]);
 

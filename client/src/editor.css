@@ -755,3 +755,97 @@
   transform: scale(1.2);
   background-color: #2563eb !important;
 }
+
+/* 커스텀 셀 색상 (우선순위 강제) */
+.tiptap .custom-cell-color {
+  background-color: var(--cell-bg-color) !important;
+  color: var(--cell-text-color) !important;
+}
+
+/* 테이블 셀 색상 강제 적용 */
+.tiptap table td[data-bg-color],
+.tiptap table th[data-bg-color] {
+  background-color: attr(data-bg-color) !important;
+}
+
+.tiptap table td[data-text-color],
+.tiptap table th[data-text-color] {
+  color: attr(data-text-color) !important;
+}
+
+/* 노션 스타일 테이블 핸들러 */
+.table-control-button {
+  user-select: none;
+  transition: all 0.2s ease;
+}
+
+.table-control-button:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+}
+
+.table-control-button .handle-grip {
+  font-weight: bold;
+  line-height: 1;
+}
+
+.table-control-button .handle-actions {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: white;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  padding: 4px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  flex-direction: column;
+  gap: 2px;
+  z-index: 10000;
+  margin-top: 4px;
+}
+
+.table-control-button .action-btn {
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.table-control-button .add-row,
+.table-control-button .add-col {
+  background-color: #10b981;
+  color: white;
+}
+
+.table-control-button .add-row:hover,
+.table-control-button .add-col:hover {
+  background-color: #059669;
+}
+
+.table-control-button .select-row,
+.table-control-button .select-col {
+  background-color: #6b7280;
+  color: white;
+}
+
+.table-control-button .select-row:hover,
+.table-control-button .select-col:hover {
+  background-color: #4b5563;
+}
+
+/* 열 핸들러의 액션 메뉴는 왼쪽으로 */
+.col-handle .handle-actions {
+  top: 50%;
+  left: 100%;
+  transform: translateY(-50%);
+  margin-top: 0;
+  margin-left: 4px;
+  flex-direction: row;
+}
