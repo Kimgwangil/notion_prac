@@ -1,5 +1,4 @@
 import { Extension } from "@tiptap/core";
-import { textblockTypeInputRule } from "@tiptap/core";
 
 const KeyMap = Extension.create({
   name: "notionKeymap",
@@ -96,20 +95,7 @@ const KeyMap = Extension.create({
           return true;
         }
 
-        // 토글: "> " ⭐ 여기가 핵심!
-        if (textBefore === ">") {
-          editor
-            .chain()
-            .focus()
-            .deleteRange({ from: $from.start(), to: $from.pos })
-            .insertContent({
-              type: "toggle",
-              attrs: { isOpen: true, title: "" },
-              content: [{ type: "paragraph" }],
-            })
-            .run();
-          return true;
-        }
+        // 토글 처리는 Toggle.jsx의 InputRules에서 담당하므로 여기서는 제거
 
         return false;
       },

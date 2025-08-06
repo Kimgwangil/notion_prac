@@ -4,7 +4,7 @@ import { ReactNodeViewRenderer, NodeViewWrapper, NodeViewContent } from "@tiptap
 import React, { useState, useEffect, useRef } from "react";
 
 // 토글 컴포넌트
-const ToggleComponent = ({ node, updateAttributes, editor }) => {
+const ToggleComponent = ({ node, updateAttributes, editor, getPos }) => {
   console.log("editor", editor);
   console.log("node", node);
   console.log("updateAttributes", updateAttributes);
@@ -24,7 +24,7 @@ const ToggleComponent = ({ node, updateAttributes, editor }) => {
       setTitle(newTitle);
       console.log("토글 제목 업데이트:", newTitle);
     }
-  }, [node.attrs.title]);
+  }, [node.attrs.title, title]);
 
   // 상태 변경을 노드 속성에 동기화
   useEffect(() => {
@@ -50,18 +50,42 @@ const ToggleComponent = ({ node, updateAttributes, editor }) => {
     if (e.key === "Enter") {
       console.log("Enter 키 눌림");
       e.preventDefault();
-      console.log("editor.commands", editor.commands);
-      // 토글 내용 부분으로 포커스 이동
-      setTimeout(() => {
-        editor.commands.focus();
-      }, 10);
+      // 토글 내용으로 포커스 이동
+      const pos = getPos() + 1;
+      editor.commands.setTextSelection(pos);
+      editor.commands.focus();
     } else if (e.key === "ArrowDown") {
       console.log("ArrowDown 키 눌림");
       e.preventDefault();
-      // 토글 내용 부분으로 포커스 이동
-      setTimeout(() => {
+      // 토글 내용으로 포커스 이동
+      const pos = getPos() + 1;
+      editor.commands.setTextSelection(pos);
+      editor.commands.focus();
+    } else if (e.key === "ArrowUp") {
+      console.log("ArrowUp 키 눌림");
+      e.preventDefault();
+      // 이전 블록으로 포커스 이동
+      const pos = getPos();
+      if (pos > 0) {
+        editor.commands.setTextSelection(pos - 1);
         editor.commands.focus();
-      }, 10);
+      }
+    } else if (e.key === "ArrowLeft" && titleRef.current && titleRef.current.selectionStart === 0) {
+      console.log("ArrowLeft 키 눌림 (제목 맨 앞)");
+      e.preventDefault();
+      // 제목 맨 앞에서 왼쪽 화살표 시 이전 블록으로 이동
+      const pos = getPos();
+      if (pos > 0) {
+        editor.commands.setTextSelection(pos - 1);
+        editor.commands.focus();
+      }
+    } else if (e.key === "ArrowRight" && titleRef.current && titleRef.current.selectionEnd === title.length) {
+      console.log("ArrowRight 키 눌림 (제목 맨 끝)");
+      e.preventDefault();
+      // 제목 맨 끝에서 오른쪽 화살표 시 토글 내용으로 이동
+      const pos = getPos() + 1;
+      editor.commands.setTextSelection(pos);
+      editor.commands.focus();
     }
   };
 
@@ -238,53 +262,62 @@ const EnhancedToggle = Node.create({
     return ReactNodeViewRenderer(ToggleComponent);
   },
 
-  // > 입력 시 토글 생성
+  // > 입력 시 토글 생성 (리스트에서도 동작)
   addInputRules() {
     return [
       {
-        find: /^>\s/,
+        find: />\s$/,
         handler: ({ state, range }) => {
           const { tr, schema } = state;
           const { $from } = state.selection;
 
-          // 현재 문단 노드와 그 텍스트 가져오기
+          // 현재 노드와 전체 텍스트 가져오기
           const currentNode = $from.parent;
           const fullText = currentNode.textContent;
           console.log("토글 생성 전 - 전체 텍스트:", fullText);
 
-          // "> " 이전의 텍스트가 제목이 됨
-          const titleText = fullText.replace(/>\s/, "").trim();
+          // "> " 이전의 텍스트가 제목이 됨 (리스트 마커 제외)
+          let titleText = fullText.replace(/>\s$/, "").trim();
+
+          // 리스트 마커 제거 (-, 1., 2. 등)
+          titleText = titleText.replace(/^[-*+]?\s*/, "").replace(/^\d+\.\s*/, "");
           console.log("토글 생성 - 제목 텍스트:", titleText);
 
-          tr.insertText("", range.from, range.to); // "> " 삭제
+          // 리스트 항목인지 확인
+          const currentList = $from.node($from.depth - 1);
+          const isInList = currentList && currentList.type.name === "listItem";
 
-          // 현재 문단의 범위
-          const nodeStart = $from.start($from.depth);
-          const nodeEnd = $from.end($from.depth);
+          if (isInList) {
+            // 리스트에서 토글 생성: 리스트 항목을 토글로 교체
+            const listItemStart = $from.start($from.depth - 1);
+            const listItemEnd = $from.end($from.depth - 1);
 
-          // 토글 노드 생성 (빈 문단 포함)
-          const toggleNode = this.type.create({ isOpen: true, title: titleText }, schema.nodes.paragraph.create());
+            // 토글 노드 생성
+            const toggleNode = this.type.create({ isOpen: true, title: titleText }, schema.nodes.paragraph.create());
 
-          console.log("생성된 토글 노드:", toggleNode);
+            // 리스트 항목을 토글로 교체
+            tr.replaceWith(listItemStart, listItemEnd, toggleNode);
 
-          // 문단을 토글로 교체
-          tr.replaceWith(nodeStart, nodeEnd, toggleNode);
+            // 토글 내부로 커서 이동
+            const toggleContentPos = listItemStart + 1;
+            tr.setSelection(state.selection.constructor.near(tr.doc.resolve(toggleContentPos)));
+          } else {
+            // 일반 문단에서 토글 생성
+            tr.insertText("", range.from, range.to); // "> " 삭제
 
-          // 토글 내부 문단으로 포커스 이동
-          const toggleStart = nodeStart;
-          const toggleContentStart = toggleStart + 1; // 토글 헤더 다음 위치
+            const nodeStart = $from.start($from.depth);
+            const nodeEnd = $from.end($from.depth);
 
-          // 토글 내부의 빈 문단 위치 찾기
-          let contentPos = toggleContentStart;
-          toggleNode.descendants((node, pos) => {
-            if (node.type.name === "paragraph" && node.content.size === 0) {
-              contentPos = toggleStart + pos + 1;
-              return false; // 첫 번째 빈 문단에서 멈춤
-            }
-          });
+            // 토글 노드 생성
+            const toggleNode = this.type.create({ isOpen: true, title: titleText }, schema.nodes.paragraph.create());
 
-          console.log("토글 내부 문단 위치:", contentPos);
-          tr.setSelection(state.selection.constructor.near(tr.doc.resolve(contentPos)));
+            // 문단을 토글로 교체
+            tr.replaceWith(nodeStart, nodeEnd, toggleNode);
+
+            // 토글 내부로 커서 이동
+            const toggleContentPos = nodeStart + 1;
+            tr.setSelection(state.selection.constructor.near(tr.doc.resolve(toggleContentPos)));
+          }
 
           return tr;
         },
@@ -341,7 +374,7 @@ const EnhancedToggle = Node.create({
       // 토글 내에서 Backspace 처리
       Backspace: ({ editor }) => {
         const { state } = editor;
-        const { selection, doc } = state;
+        const { selection } = state;
         const { $from } = selection;
 
         // 커서가 문단 시작에 있고, 토글 내부에 있을 때
