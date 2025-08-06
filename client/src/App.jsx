@@ -71,13 +71,13 @@ const ColorPicker = ({ editor, show, position, onClose }) => {
         borderRadius: "8px",
         padding: "12px",
         boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1)",
-        minWidth: "240px",
+        minWidth: "180px",
       }}
     >
       {/* 글자 색상 */}
       <div style={{ marginBottom: "12px" }}>
         <div style={{ fontSize: "12px", fontWeight: "500", marginBottom: "8px", color: "#6b7280" }}>텍스트 색상</div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: "4px" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 0fr)", gap: "8px" }}>
           {colors.map((color, index) => (
             <button
               key={`text-${index}`}
@@ -86,26 +86,37 @@ const ColorPicker = ({ editor, show, position, onClose }) => {
                 onClose();
               }}
               style={{
-                width: "32px",
-                height: "32px",
-                border: "1px solid #e5e7eb",
+                width: "30px",
+                height: "30px",
+                border: `1px solid ${color.text}30`,
                 borderRadius: "4px",
                 cursor: "pointer",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
                 backgroundColor: "white",
+                paddding: 0,
+                fontSize: 0,
               }}
               title={color.name}
             >
               <div
                 style={{
                   width: "20px",
-                  height: "20px",
-                  backgroundColor: color.text,
+                  height: "15px",
+                  fontSize: "13px",
+                  fontWeight: "bold",
+                  color: color.text,
+                  textAlign: "center",
+                  lineHeight: "12px",
                   borderRadius: "2px",
+                  // border: `1px solid ${color.text}`,
+                  // transform: "translate(-50%, 0) rotate(90deg)",
+                  // borderRadius: "2px",
                 }}
-              />
+              >
+                A{/* {color.name} */}
+              </div>
             </button>
           ))}
         </div>
@@ -114,7 +125,7 @@ const ColorPicker = ({ editor, show, position, onClose }) => {
       {/* 배경 색상 */}
       <div>
         <div style={{ fontSize: "12px", fontWeight: "500", marginBottom: "8px", color: "#6b7280" }}>배경 색상</div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: "4px" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 0fr)", gap: "8px" }}>
           {colors.map((color, index) => (
             <button
               key={`bg-${index}`}
@@ -127,13 +138,15 @@ const ColorPicker = ({ editor, show, position, onClose }) => {
                 onClose();
               }}
               style={{
-                width: "32px",
-                height: "32px",
-                border: "1px solid #e5e7eb",
+                width: "30px",
+                height: "30px",
+                border: `1px solid ${color.text}30`,
                 borderRadius: "4px",
                 cursor: "pointer",
                 backgroundColor: color.bg === "transparent" ? "white" : color.bg,
                 position: "relative",
+                paddding: 0,
+                fontSize: 0,
               }}
               title={`${color.name} 배경`}
             >
@@ -951,17 +964,17 @@ export default function App() {
                 // TipTap의 posAtDOM을 사용해서 셀 위치 찾기
                 const pos = editor.view.posAtDOM(targetCell, 0);
                 const resolvedPos = editor.state.doc.resolve(pos);
-                
+
                 // 셀 노드 찾기
                 for (let depth = resolvedPos.depth; depth >= 0; depth--) {
                   const node = resolvedPos.node(depth);
                   if (node.type.name === "tableCell" || node.type.name === "tableHeader") {
                     const cellPos = resolvedPos.start(depth) - 1;
-                    
+
                     // 기존 스타일 파싱
                     const existingStyle = node.attrs.style || "";
                     const styleObj = {};
-                    
+
                     if (existingStyle) {
                       existingStyle.split(";").forEach((rule) => {
                         const [prop, value] = rule.split(":").map((s) => s.trim());
@@ -970,7 +983,7 @@ export default function App() {
                         }
                       });
                     }
-                    
+
                     // 색상 업데이트
                     if (color.bg === "transparent") {
                       delete styleObj["background-color"];
@@ -978,28 +991,28 @@ export default function App() {
                       styleObj["background-color"] = color.bg;
                     }
                     styleObj["color"] = color.color;
-                    
+
                     // 스타일 문자열로 변환
                     const newStyle = Object.entries(styleObj)
                       .map(([prop, value]) => `${prop}: ${value}`)
                       .join("; ");
-                    
+
                     const attrs = {
                       ...node.attrs,
                       style: newStyle,
                     };
-                    
+
                     console.log(`행 ${rowIdx}, 열 ${colIndex} TipTap 속성 업데이트:`, attrs);
-                    
+
                     // TipTap을 통해 속성 업데이트
                     editor.view.dispatch(editor.state.tr.setNodeMarkup(cellPos, null, attrs));
-                    
+
                     break;
                   }
                 }
               } catch (error) {
                 console.error(`행 ${rowIdx}, 열 ${colIndex} 색상 적용 오류:`, error);
-                
+
                 // TipTap 방식이 실패하면 직접 DOM 조작
                 if (color.bg === "transparent") {
                   targetCell.style.setProperty("background-color", "", "important");
