@@ -769,13 +769,15 @@ export default function App() {
       colors.forEach((color) => {
         const colorBtn = document.createElement("button");
         colorBtn.style.cssText = `
-          width: 16px;
-          height: 16px;
+          width: 22px;
+          height: 22px;
           background-color: ${color.bg === "transparent" ? "#ffffff" : color.bg};
-          border: 1px solid #d1d5db;
+          border: 1px solid ${color.color}30;
           border-radius: 3px;
           cursor: pointer;
           transition: transform 0.1s ease;
+          padding: 0;
+          font-size: 0;
         `;
 
         colorBtn.addEventListener("mouseenter", () => {
@@ -930,13 +932,15 @@ export default function App() {
       colors.forEach((color) => {
         const colorBtn = document.createElement("button");
         colorBtn.style.cssText = `
-          width: 16px;
-          height: 16px;
+          width: 22px;
+          height: 22px;
           background-color: ${color.bg === "transparent" ? "#ffffff" : color.bg};
-          border: 1px solid #d1d5db;
+          border: 1px solid ${color.color}30;
           border-radius: 3px;
           cursor: pointer;
           transition: transform 0.1s ease;
+          padding: 0;
+          font-size: 0;
         `;
 
         colorBtn.addEventListener("mouseenter", () => {
