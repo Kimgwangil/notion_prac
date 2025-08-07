@@ -25,7 +25,6 @@ import { TableRow } from "@tiptap/extension-table-row";
 import { TableCell } from "@tiptap/extension-table-cell";
 import { TableHeader } from "@tiptap/extension-table-header";
 import { ReactNodeViewRenderer } from "@tiptap/react";
-import TableWithButtons from "./components/TableWithButtons";
 import ResizableImage from "./components/ResizableImage";
 
 import SlashCommand from "./SlashCommand";
@@ -600,9 +599,62 @@ export default function App() {
 
     let currentButtons = [];
     let isTableHovered = false;
-    let selectedRow = null;
-    let selectedColumn = null;
+
     let hoveredCell = null;
+
+    // 테이블 컨트롤 버튼 생성 공통 함수
+    const createTableControlButton = (config) => {
+      const { className, text, position, dimensions, color, backgroundColor, borderColor, onClick, writingMode = "horizontal-tb" } = config;
+
+      const button = document.createElement("div");
+      button.className = `table-control-button ${className}`;
+      button.innerHTML = `<span>${text}</span>`;
+      button.style.cssText = `
+        position: fixed;
+        left: ${position.left}px;
+        top: ${position.top}px;
+        width: ${dimensions.width}px;
+        height: ${dimensions.height}px;
+        background-color: ${backgroundColor};
+        border: 1px dashed ${borderColor};
+        cursor: pointer;
+        z-index: 9999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+        color: ${color};
+        font-weight: bold;
+        writing-mode: ${writingMode};
+        transition: all 0.2s ease;
+        pointer-events: auto;
+      `;
+
+      const hoverBg = backgroundColor.replace("0.1", "0.2");
+
+      button.addEventListener("mouseenter", () => {
+        button.style.backgroundColor = hoverBg;
+        isTableHovered = true;
+      });
+
+      button.addEventListener("mouseleave", () => {
+        button.style.backgroundColor = backgroundColor;
+        setTimeout(() => {
+          if (!isTableHovered) {
+            currentButtons.forEach((btn) => btn.remove());
+            currentButtons = [];
+          }
+        }, 100);
+      });
+
+      button.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        onClick(e);
+      });
+
+      return button;
+    };
 
     const showButtons = (table) => {
       // 기존 버튼들 제거
@@ -611,116 +663,123 @@ export default function App() {
 
       const tableRect = table.getBoundingClientRect();
 
-      // 행 추가 영역 (테이블 전체 하단)
-      const addRowArea = document.createElement("div");
-      addRowArea.className = "table-control-button add-row-area";
-      addRowArea.innerHTML = "<span>+</span>";
-      addRowArea.style.cssText = `
-        position: fixed;
-        left: ${tableRect.left}px;
-        top: ${tableRect.bottom + 2}px;
-        width: ${tableRect.width}px;
-        height: 20px;
-        background-color: rgba(16, 185, 129, 0.1);
-        border: 1px dashed #10b981;
-        cursor: pointer;
-        z-index: 9999;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 14px;
-        color: #10b981;
-        font-weight: bold;
-        transition: all 0.2s ease;
-        pointer-events: auto;
-      `;
-
-      addRowArea.addEventListener("mouseenter", () => {
-        addRowArea.style.backgroundColor = "rgba(16, 185, 129, 0.2)";
-        isTableHovered = true;
-      });
-
-      addRowArea.addEventListener("mouseleave", () => {
-        addRowArea.style.backgroundColor = "rgba(16, 185, 129, 0.1)";
-        setTimeout(() => {
-          if (!isTableHovered) {
-            currentButtons.forEach((btn) => btn.remove());
-            currentButtons = [];
+      // 행 추가 버튼 (테이블 하단)
+      const addRowButton = createTableControlButton({
+        className: "add-row-area",
+        text: "+",
+        position: { left: tableRect.left, top: tableRect.bottom + 2 },
+        dimensions: { width: tableRect.width, height: 20 },
+        color: "#10b981",
+        backgroundColor: "rgba(16, 185, 129, 0.1)",
+        borderColor: "#10b981",
+        onClick: () => {
+          // 테이블의 마지막 행에 포커스를 설정하고 행 추가
+          const lastRow = table.querySelector("tr:last-child");
+          const firstCell = lastRow?.querySelector("td, th");
+          if (firstCell && editor) {
+            // TipTap DOM에서 위치 찾기
+            try {
+              const pos = editor.view.posAtDOM(firstCell, 0);
+              editor.chain().focus(pos).addRowAfter().run();
+            } catch (error) {
+              console.log("Direct position failed, trying click method:", error);
+              firstCell.click();
+              setTimeout(() => {
+                editor.chain().focus().addRowAfter().run();
+              }, 50);
+            }
           }
-        }, 100);
+        },
       });
 
-      addRowArea.addEventListener("click", (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        // 마지막 행의 첫 번째 셀 클릭
-        const lastRow = table.querySelector("tr:last-child");
-        const firstCell = lastRow?.querySelector("td, th");
-        if (firstCell) {
-          firstCell.click();
-          setTimeout(() => {
-            editor.chain().focus().addRowAfter().run();
-          }, 10);
-        }
-      });
-
-      // 열 추가 영역 (테이블 전체 우측)
-      const addColArea = document.createElement("div");
-      addColArea.className = "table-control-button add-col-area";
-      addColArea.innerHTML = "<span>+</span>";
-      addColArea.style.cssText = `
-        position: fixed;
-        left: ${tableRect.right + 2}px;
-        top: ${tableRect.top}px;
-        width: 20px;
-        height: ${tableRect.height}px;
-        background-color: rgba(139, 92, 246, 0.1);
-        border: 1px dashed #8b5cf6;
-        cursor: pointer;
-        z-index: 9999;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 14px;
-        color: #8b5cf6;
-        font-weight: bold;
-        writing-mode: vertical-rl;
-        transition: all 0.2s ease;
-        pointer-events: auto;
-      `;
-
-      addColArea.addEventListener("mouseenter", () => {
-        addColArea.style.backgroundColor = "rgba(139, 92, 246, 0.2)";
-        isTableHovered = true;
-      });
-
-      addColArea.addEventListener("mouseleave", () => {
-        addColArea.style.backgroundColor = "rgba(139, 92, 246, 0.1)";
-        setTimeout(() => {
-          if (!isTableHovered) {
-            currentButtons.forEach((btn) => btn.remove());
-            currentButtons = [];
+      // 행 삭제 버튼 (테이블 상단)
+      const deleteRowButton = createTableControlButton({
+        className: "delete-row-area",
+        text: "−",
+        position: { left: tableRect.left, top: tableRect.top - 24 },
+        dimensions: { width: tableRect.width, height: 20 },
+        color: "#ef4444",
+        backgroundColor: "rgba(239, 68, 68, 0.1)",
+        borderColor: "#ef4444",
+        onClick: () => {
+          const firstRow = table.querySelector("tr:first-child");
+          const firstCell = firstRow?.querySelector("td, th");
+          if (firstCell && table.querySelectorAll("tr").length > 1 && editor) {
+            try {
+              const pos = editor.view.posAtDOM(firstCell, 0);
+              editor.chain().focus(pos).deleteRow().run();
+            } catch (error) {
+              console.log("Direct position failed, trying click method:", error);
+              firstCell.click();
+              setTimeout(() => {
+                editor.chain().focus().deleteRow().run();
+              }, 50);
+            }
           }
-        }, 100);
+        },
       });
 
-      addColArea.addEventListener("click", (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        // 첫 번째 행의 마지막 셀 클릭
-        const firstRow = table.querySelector("tr:first-child");
-        const lastCell = firstRow?.querySelector("td:last-child, th:last-child");
-        if (lastCell) {
-          lastCell.click();
-          setTimeout(() => {
-            editor.chain().focus().addColumnAfter().run();
-          }, 10);
-        }
+      // 열 추가 버튼 (테이블 우측)
+      const addColButton = createTableControlButton({
+        className: "add-col-area",
+        text: "+",
+        position: { left: tableRect.right + 2, top: tableRect.top },
+        dimensions: { width: 20, height: tableRect.height },
+        color: "#8b5cf6",
+        backgroundColor: "rgba(139, 92, 246, 0.1)",
+        borderColor: "#8b5cf6",
+        writingMode: "vertical-rl",
+        onClick: () => {
+          const firstRow = table.querySelector("tr:first-child");
+          const lastCell = firstRow?.querySelector("td:last-child, th:last-child");
+          if (lastCell && editor) {
+            try {
+              const pos = editor.view.posAtDOM(lastCell, 0);
+              editor.chain().focus(pos).addColumnAfter().run();
+            } catch (error) {
+              console.log("Direct position failed, trying click method:", error);
+              lastCell.click();
+              setTimeout(() => {
+                editor.chain().focus().addColumnAfter().run();
+              }, 50);
+            }
+          }
+        },
       });
 
-      document.body.appendChild(addRowArea);
-      document.body.appendChild(addColArea);
-      currentButtons.push(addRowArea, addColArea);
+      // 열 삭제 버튼 (테이블 좌측)
+      const deleteColButton = createTableControlButton({
+        className: "delete-col-area",
+        text: "−",
+        position: { left: tableRect.left - 24, top: tableRect.top },
+        dimensions: { width: 20, height: tableRect.height },
+        color: "#ef4444",
+        backgroundColor: "rgba(239, 68, 68, 0.1)",
+        borderColor: "#ef4444",
+        writingMode: "vertical-rl",
+        onClick: () => {
+          const firstRow = table.querySelector("tr:first-child");
+          const firstCell = firstRow?.querySelector("td:first-child, th:first-child");
+          if (firstCell && firstRow.children.length > 1 && editor) {
+            try {
+              const pos = editor.view.posAtDOM(firstCell, 0);
+              editor.chain().focus(pos).deleteColumn().run();
+            } catch (error) {
+              console.log("Direct position failed, trying click method:", error);
+              firstCell.click();
+              setTimeout(() => {
+                editor.chain().focus().deleteColumn().run();
+              }, 50);
+            }
+          }
+        },
+      });
+
+      const buttons = [addRowButton, deleteRowButton, addColButton, deleteColButton];
+      buttons.forEach((button) => {
+        document.body.appendChild(button);
+        currentButtons.push(button);
+      });
     };
 
     const showCellControls = (cell, table) => {
@@ -885,32 +944,6 @@ export default function App() {
         rowColorPalette.appendChild(colorBtn);
       });
 
-      // 행 삭제 버튼 (셀 왼쪽)
-      const rowDeleteBtn = document.createElement("button");
-      rowDeleteBtn.className = "cell-delete-button row-delete-btn";
-      rowDeleteBtn.innerHTML = "−";
-      rowDeleteBtn.style.cssText = `
-        position: fixed;
-        left: ${tableRect.left - 25}px;
-        top: ${cellRect.top + cellRect.height / 2 - 10}px;
-        width: 20px;
-        height: 20px;
-        background-color: #ef4444;
-        color: white;
-        border: none;
-        border-radius: 4px;
-        cursor: pointer;
-        font-size: 14px;
-        font-weight: bold;
-        z-index: 9999;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-        pointer-events: auto;
-        transition: all 0.2s ease;
-      `;
-
       // 열 컬러 팔레트 (열 맨 하단)
       const colColorPalette = document.createElement("div");
       colColorPalette.className = "col-color-palette";
@@ -1053,139 +1086,10 @@ export default function App() {
         colColorPalette.appendChild(colorBtn);
       });
 
-      // 열 삭제 버튼 (셀 위쪽, 좀 더 아래로)
-      const colDeleteBtn = document.createElement("button");
-      colDeleteBtn.className = "cell-delete-button col-delete-btn";
-      colDeleteBtn.innerHTML = "−";
-      colDeleteBtn.style.cssText = `
-        position: fixed;
-        left: ${cellRect.left + cellRect.width / 2 - 10}px;
-        top: ${tableRect.top - 15}px;
-        width: 20px;
-        height: 20px;
-        background-color: #ef4444;
-        color: white;
-        border: none;
-        border-radius: 4px;
-        cursor: pointer;
-        font-size: 14px;
-        font-weight: bold;
-        z-index: 9999;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-        pointer-events: auto;
-        transition: all 0.2s ease;
-      `;
-
-      // 버튼 호버 상태를 유지하기 위한 이벤트들
-      let isButtonHovered = false;
-
-      // 행 삭제 이벤트
-      rowDeleteBtn.addEventListener("click", (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-
-        // 행 하이라이트 효과
-        row.style.backgroundColor = "#fecaca";
-        row.style.transition = "all 0.3s ease";
-
-        // 해당 행의 첫 번째 셀 클릭하여 커서 위치 설정
-        const firstCell = row.querySelector("td, th");
-        if (firstCell) {
-          firstCell.click();
-          setTimeout(() => {
-            editor.chain().focus().deleteRow().run();
-            // 버튼 제거
-            document.querySelectorAll(".cell-delete-button").forEach((btn) => btn.remove());
-          }, 100);
-        }
-      });
-
-      // 열 삭제 이벤트
-      colDeleteBtn.addEventListener("click", (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-
-        // 열 하이라이트 효과
-        table.querySelectorAll("tr").forEach((tableRow) => {
-          const targetCell = tableRow.children[colIndex];
-          if (targetCell) {
-            targetCell.style.backgroundColor = "#fecaca";
-            targetCell.style.transition = "all 0.3s ease";
-          }
-        });
-
-        // 해당 열의 셀 클릭하여 커서 위치 설정
-        cell.click();
-        setTimeout(() => {
-          editor.chain().focus().deleteColumn().run();
-          // 버튼 제거
-          document.querySelectorAll(".cell-delete-button").forEach((btn) => btn.remove());
-        }, 100);
-      });
-
-      // 버튼 호버 효과
-      rowDeleteBtn.addEventListener("mouseenter", () => {
-        isButtonHovered = true;
-        rowDeleteBtn.style.backgroundColor = "#dc2626";
-        rowDeleteBtn.style.transform = "scale(1.1)";
-        // 해당 행 미리보기 하이라이트
-        row.style.backgroundColor = "rgba(239, 68, 68, 0.1)";
-      });
-
-      rowDeleteBtn.addEventListener("mouseleave", () => {
-        isButtonHovered = false;
-        rowDeleteBtn.style.backgroundColor = "#ef4444";
-        rowDeleteBtn.style.transform = "scale(1)";
-        row.style.backgroundColor = "";
-        // 버튼이 호버 상태가 아니면 일정 시간 후 제거
-        setTimeout(() => {
-          if (!isButtonHovered && !isTableHovered) {
-            document.querySelectorAll(".cell-delete-button, .row-color-palette, .col-color-palette").forEach((btn) => btn.remove());
-          }
-        }, 200);
-      });
-
-      colDeleteBtn.addEventListener("mouseenter", () => {
-        isButtonHovered = true;
-        colDeleteBtn.style.backgroundColor = "#dc2626";
-        colDeleteBtn.style.transform = "scale(1.1)";
-        // 해당 열 미리보기 하이라이트
-        table.querySelectorAll("tr").forEach((tableRow) => {
-          const targetCell = tableRow.children[colIndex];
-          if (targetCell) {
-            targetCell.style.backgroundColor = "rgba(239, 68, 68, 0.1)";
-          }
-        });
-      });
-
-      colDeleteBtn.addEventListener("mouseleave", () => {
-        isButtonHovered = false;
-        colDeleteBtn.style.backgroundColor = "#ef4444";
-        colDeleteBtn.style.transform = "scale(1)";
-        // 열 하이라이트 제거
-        table.querySelectorAll("tr").forEach((tableRow) => {
-          const targetCell = tableRow.children[colIndex];
-          if (targetCell) {
-            targetCell.style.backgroundColor = "";
-          }
-        });
-        // 버튼이 호버 상태가 아니면 일정 시간 후 제거
-        setTimeout(() => {
-          if (!isButtonHovered && !isTableHovered) {
-            document.querySelectorAll(".cell-delete-button, .row-color-palette, .col-color-palette").forEach((btn) => btn.remove());
-          }
-        }, 200);
-      });
-
       // 컬러 팔레트들을 DOM에 추가
       document.body.appendChild(rowColorPalette);
       document.body.appendChild(colColorPalette);
-      document.body.appendChild(rowDeleteBtn);
-      document.body.appendChild(colDeleteBtn);
-      currentButtons.push(rowColorPalette, colColorPalette, rowDeleteBtn, colDeleteBtn);
+      currentButtons.push(rowColorPalette, colColorPalette);
     };
 
     const hideButtons = () => {
@@ -1462,8 +1366,7 @@ export default function App() {
         height: "100%",
       }}
     >
-      <header style={{ height: "60px", borderBottom: "1px solid #ddd" }}>
-        헤더
+      <header style={{ height: "40px", borderBottom: "1px solid #ddd" }}>
         {/* 표 추가 버튼 (테스트용) */}
         <button
           onClick={() => {
@@ -1510,16 +1413,6 @@ export default function App() {
           style={{ marginLeft: "10px", padding: "4px 8px" }}
         >
           💡 Callout
-        </button>
-        {/* Snowflake 데이터 템플릿 버튼들 */}
-        <button onClick={() => insertDataTemplate("salesDashboard")} style={{ marginLeft: "10px", padding: "4px 8px", backgroundColor: "#e0f2fe" }}>
-          📊 매출 대시보드
-        </button>
-        <button onClick={() => insertDataTemplate("productPerformance")} style={{ marginLeft: "10px", padding: "4px 8px", backgroundColor: "#f0fdf4" }}>
-          🛍️ 제품 성과
-        </button>
-        <button onClick={() => insertDataTemplate("salesByRegion")} style={{ marginLeft: "10px", padding: "4px 8px", backgroundColor: "#fef3c7" }}>
-          🌍 지역별 매출
         </button>
         {/* 디버깅용 초기화 버튼 */}
         <button
