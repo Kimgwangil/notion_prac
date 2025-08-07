@@ -71,12 +71,24 @@ const ColorPicker = ({ editor, show, position, onClose }) => {
         padding: "12px",
         boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1)",
         minWidth: "180px",
-      }}
-    >
+      }}>
       {/* 글자 색상 */}
       <div style={{ marginBottom: "12px" }}>
-        <div style={{ fontSize: "12px", fontWeight: "500", marginBottom: "8px", color: "#6b7280" }}>텍스트 색상</div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 0fr)", gap: "8px" }}>
+        <div
+          style={{
+            fontSize: "12px",
+            fontWeight: "500",
+            marginBottom: "8px",
+            color: "#6b7280",
+          }}>
+          텍스트 색상
+        </div>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(5, 0fr)",
+            gap: "8px",
+          }}>
           {colors.map((color, index) => (
             <button
               key={`text-${index}`}
@@ -97,8 +109,7 @@ const ColorPicker = ({ editor, show, position, onClose }) => {
                 paddding: 0,
                 fontSize: 0,
               }}
-              title={color.name}
-            >
+              title={color.name}>
               <div
                 style={{
                   width: "20px",
@@ -112,8 +123,7 @@ const ColorPicker = ({ editor, show, position, onClose }) => {
                   // border: `1px solid ${color.text}`,
                   // transform: "translate(-50%, 0) rotate(90deg)",
                   // borderRadius: "2px",
-                }}
-              >
+                }}>
                 A{/* {color.name} */}
               </div>
             </button>
@@ -123,8 +133,21 @@ const ColorPicker = ({ editor, show, position, onClose }) => {
 
       {/* 배경 색상 */}
       <div>
-        <div style={{ fontSize: "12px", fontWeight: "500", marginBottom: "8px", color: "#6b7280" }}>배경 색상</div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 0fr)", gap: "8px" }}>
+        <div
+          style={{
+            fontSize: "12px",
+            fontWeight: "500",
+            marginBottom: "8px",
+            color: "#6b7280",
+          }}>
+          배경 색상
+        </div>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(5, 0fr)",
+            gap: "8px",
+          }}>
           {colors.map((color, index) => (
             <button
               key={`bg-${index}`}
@@ -132,7 +155,11 @@ const ColorPicker = ({ editor, show, position, onClose }) => {
                 if (color.bg === "transparent") {
                   editor.chain().focus().unsetHighlight().run();
                 } else {
-                  editor.chain().focus().setHighlight({ color: color.bg }).run();
+                  editor
+                    .chain()
+                    .focus()
+                    .setHighlight({ color: color.bg })
+                    .run();
                 }
                 onClose();
               }}
@@ -142,13 +169,13 @@ const ColorPicker = ({ editor, show, position, onClose }) => {
                 border: `1px solid ${color.text}30`,
                 borderRadius: "4px",
                 cursor: "pointer",
-                backgroundColor: color.bg === "transparent" ? "white" : color.bg,
+                backgroundColor:
+                  color.bg === "transparent" ? "white" : color.bg,
                 position: "relative",
                 paddding: 0,
                 fontSize: 0,
               }}
-              title={`${color.name} 배경`}
-            >
+              title={`${color.name} 배경`}>
               {color.bg === "transparent" && (
                 <div
                   style={{
@@ -172,8 +199,14 @@ const ColorPicker = ({ editor, show, position, onClose }) => {
 
 export default function App() {
   const [ydoc] = useState(() => new Y.Doc());
-  const [colorPicker, setColorPicker] = useState({ show: false, position: { x: 0, y: 0 } });
-  const [tableMenu, setTableMenu] = useState({ show: false, position: { x: 0, y: 0 } });
+  const [colorPicker, setColorPicker] = useState({
+    show: false,
+    position: { x: 0, y: 0 },
+  });
+  const [tableMenu, setTableMenu] = useState({
+    show: false,
+    position: { x: 0, y: 0 },
+  });
 
   // Snowflake 데이터 템플릿 삽입 함수
   const insertDataTemplate = async (templateName) => {
@@ -184,7 +217,12 @@ export default function App() {
       const loadingCallout = {
         type: "callout",
         attrs: { type: "info", title: "데이터 로딩 중..." },
-        content: [{ type: "paragraph", content: [{ type: "text", text: "데이터를 가져오는 중입니다..." }] }],
+        content: [
+          {
+            type: "paragraph",
+            content: [{ type: "text", text: "데이터를 가져오는 중입니다..." }],
+          },
+        ],
       };
 
       editor.chain().focus().insertContent(loadingCallout).run();
@@ -217,13 +255,29 @@ export default function App() {
           // 헤더 행
           editor.schema.nodes.tableRow.create(
             {},
-            tableData.headers.map((header) => editor.schema.nodes.tableHeader.create({}, editor.schema.nodes.paragraph.create({}, editor.schema.text(header))))
+            tableData.headers.map((header) =>
+              editor.schema.nodes.tableHeader.create(
+                {},
+                editor.schema.nodes.paragraph.create(
+                  {},
+                  editor.schema.text(header)
+                )
+              )
+            )
           ),
           // 데이터 행들
           ...tableRows.map((row) =>
             editor.schema.nodes.tableRow.create(
               {},
-              row.map((cell) => editor.schema.nodes.tableCell.create({}, editor.schema.nodes.paragraph.create({}, editor.schema.text(String(cell || "")))))
+              row.map((cell) =>
+                editor.schema.nodes.tableCell.create(
+                  {},
+                  editor.schema.nodes.paragraph.create(
+                    {},
+                    editor.schema.text(String(cell || ""))
+                  )
+                )
+              )
             )
           ),
         ]);
@@ -257,7 +311,11 @@ export default function App() {
   };
 
   useEffect(() => {
-    const provider = new WebsocketProvider("ws://localhost:3001", "my-room", ydoc);
+    const provider = new WebsocketProvider(
+      "ws://localhost:3001",
+      "my-room",
+      ydoc
+    );
     return () => {
       provider.destroy();
     };
@@ -368,7 +426,8 @@ export default function App() {
 
       Placeholder.configure({
         placeholder: ({ node }) => {
-          const text = placeholderText[node.type.name] || "내용을 입력하세요...";
+          const text =
+            placeholderText[node.type.name] || "내용을 입력하세요...";
           const marginLevel = placeholderMarginLevel[node.type.name] || 0;
 
           // 마진 레벨을 텍스트에 숨겨진 마커로 추가
@@ -448,7 +507,12 @@ export default function App() {
             rows.map((row) =>
               schema.nodes.tableRow.create(
                 {},
-                row.map((cell) => schema.nodes.tableCell.create({}, schema.nodes.paragraph.create({}, schema.text(cell || ""))))
+                row.map((cell) =>
+                  schema.nodes.tableCell.create(
+                    {},
+                    schema.nodes.paragraph.create({}, schema.text(cell || ""))
+                  )
+                )
               )
             )
           );
@@ -467,7 +531,11 @@ export default function App() {
             const file = item.getAsFile();
             const reader = new FileReader();
             reader.onload = (readerEvent) => {
-              editor.chain().focus().setImage({ src: readerEvent.target.result }).run();
+              editor
+                .chain()
+                .focus()
+                .setImage({ src: readerEvent.target.result })
+                .run();
             };
             reader.readAsDataURL(file);
             return true;
@@ -484,7 +552,11 @@ export default function App() {
           if (file.type.startsWith("image/")) {
             const reader = new FileReader();
             reader.onload = (readerEvent) => {
-              editor.chain().focus().setImage({ src: readerEvent.target.result }).run();
+              editor
+                .chain()
+                .focus()
+                .setImage({ src: readerEvent.target.result })
+                .run();
             };
             reader.readAsDataURL(file);
             return true;
@@ -540,7 +612,16 @@ export default function App() {
         if (event.key === "Backspace" && $from.parentOffset === 0) {
           const parentType = $from.parent.type.name;
 
-          if (["heading", "bulletList", "orderedList", "toggle", "taskList", "paragraph"].includes(parentType)) {
+          if (
+            [
+              "heading",
+              "bulletList",
+              "orderedList",
+              "toggle",
+              "taskList",
+              "paragraph",
+            ].includes(parentType)
+          ) {
             event.preventDefault();
             return editor.chain().focus().setParagraph().run();
           }
@@ -604,7 +685,17 @@ export default function App() {
 
     // 테이블 컨트롤 버튼 생성 공통 함수
     const createTableControlButton = (config) => {
-      const { className, text, position, dimensions, color, backgroundColor, borderColor, onClick, writingMode = "horizontal-tb" } = config;
+      const {
+        className,
+        text,
+        position,
+        dimensions,
+        color,
+        backgroundColor,
+        borderColor,
+        onClick,
+        writingMode = "horizontal-tb",
+      } = config;
 
       const button = document.createElement("div");
       button.className = `table-control-button ${className}`;
@@ -682,7 +773,10 @@ export default function App() {
               const pos = editor.view.posAtDOM(firstCell, 0);
               editor.chain().focus(pos).addRowAfter().run();
             } catch (error) {
-              console.log("Direct position failed, trying click method:", error);
+              console.log(
+                "Direct position failed, trying click method:",
+                error
+              );
               firstCell.click();
               setTimeout(() => {
                 editor.chain().focus().addRowAfter().run();
@@ -709,7 +803,10 @@ export default function App() {
               const pos = editor.view.posAtDOM(firstCell, 0);
               editor.chain().focus(pos).deleteRow().run();
             } catch (error) {
-              console.log("Direct position failed, trying click method:", error);
+              console.log(
+                "Direct position failed, trying click method:",
+                error
+              );
               firstCell.click();
               setTimeout(() => {
                 editor.chain().focus().deleteRow().run();
@@ -731,13 +828,18 @@ export default function App() {
         writingMode: "vertical-rl",
         onClick: () => {
           const firstRow = table.querySelector("tr:first-child");
-          const lastCell = firstRow?.querySelector("td:last-child, th:last-child");
+          const lastCell = firstRow?.querySelector(
+            "td:last-child, th:last-child"
+          );
           if (lastCell && editor) {
             try {
               const pos = editor.view.posAtDOM(lastCell, 0);
               editor.chain().focus(pos).addColumnAfter().run();
             } catch (error) {
-              console.log("Direct position failed, trying click method:", error);
+              console.log(
+                "Direct position failed, trying click method:",
+                error
+              );
               lastCell.click();
               setTimeout(() => {
                 editor.chain().focus().addColumnAfter().run();
@@ -759,13 +861,18 @@ export default function App() {
         writingMode: "vertical-rl",
         onClick: () => {
           const firstRow = table.querySelector("tr:first-child");
-          const firstCell = firstRow?.querySelector("td:first-child, th:first-child");
+          const firstCell = firstRow?.querySelector(
+            "td:first-child, th:first-child"
+          );
           if (firstCell && firstRow.children.length > 1 && editor) {
             try {
               const pos = editor.view.posAtDOM(firstCell, 0);
               editor.chain().focus(pos).deleteColumn().run();
             } catch (error) {
-              console.log("Direct position failed, trying click method:", error);
+              console.log(
+                "Direct position failed, trying click method:",
+                error
+              );
               firstCell.click();
               setTimeout(() => {
                 editor.chain().focus().deleteColumn().run();
@@ -775,7 +882,12 @@ export default function App() {
         },
       });
 
-      const buttons = [addRowButton, deleteRowButton, addColButton, deleteColButton];
+      const buttons = [
+        addRowButton,
+        deleteRowButton,
+        addColButton,
+        deleteColButton,
+      ];
       buttons.forEach((button) => {
         document.body.appendChild(button);
         currentButtons.push(button);
@@ -784,9 +896,19 @@ export default function App() {
 
     const showCellControls = (cell, table) => {
       // 기존 셀 컨트롤들 제거
-      document.querySelectorAll(".cell-delete-button, .row-color-palette, .col-color-palette").forEach((btn) => btn.remove());
+      document
+        .querySelectorAll(
+          ".cell-delete-button, .row-color-palette, .col-color-palette"
+        )
+        .forEach((btn) => btn.remove());
 
-      if (!cell || !table || !cell.closest || typeof cell.closest !== "function") return;
+      if (
+        !cell ||
+        !table ||
+        !cell.closest ||
+        typeof cell.closest !== "function"
+      )
+        return;
 
       const row = cell.closest("tr");
       if (!row) return;
@@ -830,7 +952,9 @@ export default function App() {
         colorBtn.style.cssText = `
           width: 22px;
           height: 22px;
-          background-color: ${color.bg === "transparent" ? "#ffffff" : color.bg};
+          background-color: ${
+            color.bg === "transparent" ? "#ffffff" : color.bg
+          };
           border: 1px solid ${color.color}30;
           border-radius: 3px;
           cursor: pointer;
@@ -866,7 +990,10 @@ export default function App() {
               // 셀 노드 찾기
               for (let depth = resolvedPos.depth; depth >= 0; depth--) {
                 const node = resolvedPos.node(depth);
-                if (node.type.name === "tableCell" || node.type.name === "tableHeader") {
+                if (
+                  node.type.name === "tableCell" ||
+                  node.type.name === "tableHeader"
+                ) {
                   const cellPos = resolvedPos.start(depth) - 1;
 
                   // 기존 스타일 파싱
@@ -875,7 +1002,9 @@ export default function App() {
 
                   if (existingStyle) {
                     existingStyle.split(";").forEach((rule) => {
-                      const [prop, value] = rule.split(":").map((s) => s.trim());
+                      const [prop, value] = rule
+                        .split(":")
+                        .map((s) => s.trim());
                       if (prop && value) {
                         styleObj[prop] = value;
                       }
@@ -903,7 +1032,9 @@ export default function App() {
                   console.log(`셀 ${idx} TipTap 속성 업데이트:`, attrs);
 
                   // TipTap을 통해 속성 업데이트
-                  editor.view.dispatch(editor.state.tr.setNodeMarkup(cellPos, null, attrs));
+                  editor.view.dispatch(
+                    editor.state.tr.setNodeMarkup(cellPos, null, attrs)
+                  );
 
                   break;
                 }
@@ -915,14 +1046,20 @@ export default function App() {
               if (color.bg === "transparent") {
                 cell.style.setProperty("background-color", "", "important");
               } else {
-                cell.style.setProperty("background-color", color.bg, "important");
+                cell.style.setProperty(
+                  "background-color",
+                  color.bg,
+                  "important"
+                );
               }
               cell.style.setProperty("color", color.color, "important");
             }
           });
 
           // 팔레트 제거
-          document.querySelectorAll(".row-color-palette, .col-color-palette").forEach((p) => p.remove());
+          document
+            .querySelectorAll(".row-color-palette, .col-color-palette")
+            .forEach((p) => p.remove());
         });
 
         // 투명 색상 표시
@@ -967,7 +1104,9 @@ export default function App() {
         colorBtn.style.cssText = `
           width: 22px;
           height: 22px;
-          background-color: ${color.bg === "transparent" ? "#ffffff" : color.bg};
+          background-color: ${
+            color.bg === "transparent" ? "#ffffff" : color.bg
+          };
           border: 1px solid ${color.color}30;
           border-radius: 3px;
           cursor: pointer;
@@ -1005,7 +1144,10 @@ export default function App() {
                 // 셀 노드 찾기
                 for (let depth = resolvedPos.depth; depth >= 0; depth--) {
                   const node = resolvedPos.node(depth);
-                  if (node.type.name === "tableCell" || node.type.name === "tableHeader") {
+                  if (
+                    node.type.name === "tableCell" ||
+                    node.type.name === "tableHeader"
+                  ) {
                     const cellPos = resolvedPos.start(depth) - 1;
 
                     // 기존 스타일 파싱
@@ -1014,7 +1156,9 @@ export default function App() {
 
                     if (existingStyle) {
                       existingStyle.split(";").forEach((rule) => {
-                        const [prop, value] = rule.split(":").map((s) => s.trim());
+                        const [prop, value] = rule
+                          .split(":")
+                          .map((s) => s.trim());
                         if (prop && value) {
                           styleObj[prop] = value;
                         }
@@ -1039,22 +1183,38 @@ export default function App() {
                       style: newStyle,
                     };
 
-                    console.log(`행 ${rowIdx}, 열 ${colIndex} TipTap 속성 업데이트:`, attrs);
+                    console.log(
+                      `행 ${rowIdx}, 열 ${colIndex} TipTap 속성 업데이트:`,
+                      attrs
+                    );
 
                     // TipTap을 통해 속성 업데이트
-                    editor.view.dispatch(editor.state.tr.setNodeMarkup(cellPos, null, attrs));
+                    editor.view.dispatch(
+                      editor.state.tr.setNodeMarkup(cellPos, null, attrs)
+                    );
 
                     break;
                   }
                 }
               } catch (error) {
-                console.error(`행 ${rowIdx}, 열 ${colIndex} 색상 적용 오류:`, error);
+                console.error(
+                  `행 ${rowIdx}, 열 ${colIndex} 색상 적용 오류:`,
+                  error
+                );
 
                 // TipTap 방식이 실패하면 직접 DOM 조작
                 if (color.bg === "transparent") {
-                  targetCell.style.setProperty("background-color", "", "important");
+                  targetCell.style.setProperty(
+                    "background-color",
+                    "",
+                    "important"
+                  );
                 } else {
-                  targetCell.style.setProperty("background-color", color.bg, "important");
+                  targetCell.style.setProperty(
+                    "background-color",
+                    color.bg,
+                    "important"
+                  );
                 }
                 targetCell.style.setProperty("color", color.color, "important");
               }
@@ -1064,7 +1224,9 @@ export default function App() {
           });
 
           // 팔레트 제거
-          document.querySelectorAll(".row-color-palette, .col-color-palette").forEach((p) => p.remove());
+          document
+            .querySelectorAll(".row-color-palette, .col-color-palette")
+            .forEach((p) => p.remove());
         });
 
         // 투명 색상 표시
@@ -1097,7 +1259,11 @@ export default function App() {
         if (!isTableHovered) {
           currentButtons.forEach((btn) => btn.remove());
           currentButtons = [];
-          document.querySelectorAll(".cell-delete-button, .row-color-palette, .col-color-palette").forEach((btn) => btn.remove());
+          document
+            .querySelectorAll(
+              ".cell-delete-button, .row-color-palette, .col-color-palette"
+            )
+            .forEach((btn) => btn.remove());
         }
       }, 300);
     };
@@ -1124,8 +1290,16 @@ export default function App() {
       if (!e.target || typeof e.target.closest !== "function") return;
 
       const table = e.target.closest("table");
-      const isLeavingToButton = e.relatedTarget && typeof e.relatedTarget.closest === "function" ? e.relatedTarget.closest(".table-control-button, .cell-delete-button, .row-color-palette, .col-color-palette") : false;
-      const isLeavingToTable = e.relatedTarget && typeof e.relatedTarget.closest === "function" ? e.relatedTarget.closest("table") : false;
+      const isLeavingToButton =
+        e.relatedTarget && typeof e.relatedTarget.closest === "function"
+          ? e.relatedTarget.closest(
+              ".table-control-button, .cell-delete-button, .row-color-palette, .col-color-palette"
+            )
+          : false;
+      const isLeavingToTable =
+        e.relatedTarget && typeof e.relatedTarget.closest === "function"
+          ? e.relatedTarget.closest("table")
+          : false;
 
       if (table && !isLeavingToTable && !isLeavingToButton) {
         console.log("테이블 벗어남!");
@@ -1142,7 +1316,11 @@ export default function App() {
       document.removeEventListener("mouseenter", handleMouseEnter, true);
       document.removeEventListener("mouseleave", handleMouseLeave, true);
       currentButtons.forEach((btn) => btn.remove());
-      document.querySelectorAll(".cell-delete-button, .row-color-palette, .col-color-palette").forEach((btn) => btn.remove());
+      document
+        .querySelectorAll(
+          ".cell-delete-button, .row-color-palette, .col-color-palette"
+        )
+        .forEach((btn) => btn.remove());
     };
   }, [editor]);
 
@@ -1234,11 +1412,21 @@ export default function App() {
                 content: [
                   {
                     type: "tableHeader",
-                    content: [{ type: "paragraph", content: [{ type: "text", text: "지표" }] }],
+                    content: [
+                      {
+                        type: "paragraph",
+                        content: [{ type: "text", text: "지표" }],
+                      },
+                    ],
                   },
                   {
                     type: "tableHeader",
-                    content: [{ type: "paragraph", content: [{ type: "text", text: "값" }] }],
+                    content: [
+                      {
+                        type: "paragraph",
+                        content: [{ type: "text", text: "값" }],
+                      },
+                    ],
                   },
                 ],
               },
@@ -1248,24 +1436,21 @@ export default function App() {
                 content: [
                   {
                     type: "tableCell",
-                    content: [{ type: "paragraph", content: [{ type: "text", text: "💰 총 매출" }] }],
+                    content: [
+                      {
+                        type: "paragraph",
+                        content: [{ type: "text", text: "총 매출" }],
+                      },
+                    ],
                   },
                   {
                     type: "tableCell",
-                    content: [{ type: "paragraph", content: [{ type: "text", text: totalSales }] }],
-                  },
-                ],
-              },
-              {
-                type: "tableRow",
-                content: [
-                  {
-                    type: "tableCell",
-                    content: [{ type: "paragraph", content: [{ type: "text", text: "📦 주문 수" }] }],
-                  },
-                  {
-                    type: "tableCell",
-                    content: [{ type: "paragraph", content: [{ type: "text", text: `${orderCount.toLocaleString()}건` }] }],
+                    content: [
+                      {
+                        type: "paragraph",
+                        content: [{ type: "text", text: totalSales }],
+                      },
+                    ],
                   },
                 ],
               },
@@ -1274,11 +1459,54 @@ export default function App() {
                 content: [
                   {
                     type: "tableCell",
-                    content: [{ type: "paragraph", content: [{ type: "text", text: "👥 신규 고객" }] }],
+                    content: [
+                      {
+                        type: "paragraph",
+                        content: [{ type: "text", text: "주문 수" }],
+                      },
+                    ],
                   },
                   {
                     type: "tableCell",
-                    content: [{ type: "paragraph", content: [{ type: "text", text: `${newCustomers.toLocaleString()}명` }] }],
+                    content: [
+                      {
+                        type: "paragraph",
+                        content: [
+                          {
+                            type: "text",
+                            text: `${orderCount.toLocaleString()}건`,
+                          },
+                        ],
+                      },
+                    ],
+                  },
+                ],
+              },
+              {
+                type: "tableRow",
+                content: [
+                  {
+                    type: "tableCell",
+                    content: [
+                      {
+                        type: "paragraph",
+                        content: [{ type: "text", text: "신규 고객" }],
+                      },
+                    ],
+                  },
+                  {
+                    type: "tableCell",
+                    content: [
+                      {
+                        type: "paragraph",
+                        content: [
+                          {
+                            type: "text",
+                            text: `${newCustomers.toLocaleString()}명`,
+                          },
+                        ],
+                      },
+                    ],
                   },
                 ],
               },
@@ -1300,18 +1528,68 @@ export default function App() {
               {
                 type: "tableRow",
                 content: [
-                  { type: "tableHeader", content: [{ type: "paragraph", content: [{ type: "text", text: "카테고리" }] }] },
-                  { type: "tableHeader", content: [{ type: "paragraph", content: [{ type: "text", text: "매출" }] }] },
-                  { type: "tableHeader", content: [{ type: "paragraph", content: [{ type: "text", text: "고객수" }] }] },
+                  {
+                    type: "tableHeader",
+                    content: [
+                      {
+                        type: "paragraph",
+                        content: [{ type: "text", text: "카테고리" }],
+                      },
+                    ],
+                  },
+                  {
+                    type: "tableHeader",
+                    content: [
+                      {
+                        type: "paragraph",
+                        content: [{ type: "text", text: "매출" }],
+                      },
+                    ],
+                  },
+                  {
+                    type: "tableHeader",
+                    content: [
+                      {
+                        type: "paragraph",
+                        content: [{ type: "text", text: "고객수" }],
+                      },
+                    ],
+                  },
                 ],
               },
               // 다중 행 데이터
               ...multiRowData.map((row) => ({
                 type: "tableRow",
                 content: [
-                  { type: "tableCell", content: [{ type: "paragraph", content: [{ type: "text", text: row.category || "" }] }] },
-                  { type: "tableCell", content: [{ type: "paragraph", content: [{ type: "text", text: row.sales || "" }] }] },
-                  { type: "tableCell", content: [{ type: "paragraph", content: [{ type: "text", text: `${row.customers || 0}명` }] }] },
+                  {
+                    type: "tableCell",
+                    content: [
+                      {
+                        type: "paragraph",
+                        content: [{ type: "text", text: row.category || "" }],
+                      },
+                    ],
+                  },
+                  {
+                    type: "tableCell",
+                    content: [
+                      {
+                        type: "paragraph",
+                        content: [{ type: "text", text: row.sales || "" }],
+                      },
+                    ],
+                  },
+                  {
+                    type: "tableCell",
+                    content: [
+                      {
+                        type: "paragraph",
+                        content: [
+                          { type: "text", text: `${row.customers || 0}명` },
+                        ],
+                      },
+                    ],
+                  },
                 ],
               })),
             ],
@@ -1321,7 +1599,9 @@ export default function App() {
             content: [
               {
                 type: "text",
-                text: `🔄 마지막 업데이트: ${new Date().toLocaleString("ko-KR")}`,
+                text: `🔄 마지막 업데이트: ${new Date().toLocaleString(
+                  "ko-KR"
+                )}`,
               },
             ],
           },
@@ -1345,7 +1625,12 @@ export default function App() {
             content: [
               {
                 type: "paragraph",
-                content: [{ type: "text", text: `Snowflake 연결 오류: ${error.message}` }],
+                content: [
+                  {
+                    type: "text",
+                    text: `Snowflake 연결 오류: ${error.message}`,
+                  },
+                ],
               },
             ],
           },
@@ -1364,16 +1649,18 @@ export default function App() {
         display: "flex",
         flexDirection: "column",
         height: "100%",
-      }}
-    >
+      }}>
       <header style={{ height: "40px", borderBottom: "1px solid #ddd" }}>
         {/* 표 추가 버튼 (테스트용) */}
         <button
           onClick={() => {
-            editor?.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run();
+            editor
+              ?.chain()
+              .focus()
+              .insertTable({ rows: 3, cols: 3, withHeaderRow: true })
+              .run();
           }}
-          style={{ marginLeft: "10px", padding: "4px 8px" }}
-        >
+          style={{ marginLeft: "10px", padding: "4px 8px" }}>
           표 추가
         </button>
         {/* 열나누기 버튼 */}
@@ -1384,12 +1671,15 @@ export default function App() {
               // 새 줄에 삽입하기 위해 먼저 새 문단 생성
               editor.chain().focus().insertContent({ type: "paragraph" }).run();
               console.log("insertGridColumns 실행 중...");
-              const result = editor.chain().focus().insertGridColumns({ columns: 2 }).run();
+              const result = editor
+                .chain()
+                .focus()
+                .insertGridColumns({ columns: 2 })
+                .run();
               console.log("insertGridColumns 결과:", result);
             }
           }}
-          style={{ marginLeft: "10px", padding: "4px 8px" }}
-        >
+          style={{ marginLeft: "10px", padding: "4px 8px" }}>
           2열
         </button>
         <button
@@ -1397,21 +1687,27 @@ export default function App() {
             console.log("3열 버튼 클릭, editor:", editor);
             if (editor) {
               console.log("insertGridColumns 실행 중...");
-              const result = editor.chain().focus().insertGridColumns({ columns: 3 }).run();
+              const result = editor
+                .chain()
+                .focus()
+                .insertGridColumns({ columns: 3 })
+                .run();
               console.log("insertGridColumns 결과:", result);
             }
           }}
-          style={{ marginLeft: "10px", padding: "4px 8px" }}
-        >
+          style={{ marginLeft: "10px", padding: "4px 8px" }}>
           3열
         </button>
         {/* Callout 버튼 */}
         <button
           onClick={() => {
-            editor?.chain().focus().insertCallout({ type: "info", title: "정보" }).run();
+            editor
+              ?.chain()
+              .focus()
+              .insertCallout({ type: "info", title: "정보" })
+              .run();
           }}
-          style={{ marginLeft: "10px", padding: "4px 8px" }}
-        >
+          style={{ marginLeft: "10px", padding: "4px 8px" }}>
           💡 Callout
         </button>
         {/* 디버깅용 초기화 버튼 */}
@@ -1422,8 +1718,11 @@ export default function App() {
               console.log("에디터 내용 초기화됨");
             }
           }}
-          style={{ marginLeft: "10px", padding: "4px 8px", backgroundColor: "#fecaca" }}
-        >
+          style={{
+            marginLeft: "10px",
+            padding: "4px 8px",
+            backgroundColor: "#fecaca",
+          }}>
           🗑️ 초기화
         </button>
       </header>
@@ -1436,8 +1735,7 @@ export default function App() {
           overflow: "auto",
           width: "100%",
           height: "100%",
-        }}
-      >
+        }}>
         <div
           onClick={() => editor?.commands.focus()}
           style={{
@@ -1446,17 +1744,28 @@ export default function App() {
             overflowY: "auto",
             width: "100%",
             height: "100%",
-          }}
-        >
+          }}>
           <EditorContent editor={editor} className="tiptap" />
         </div>
       </main>
 
       {/* 색상 선택 팝업 */}
-      <ColorPicker editor={editor} show={colorPicker.show} position={colorPicker.position} onClose={() => setColorPicker({ show: false, position: { x: 0, y: 0 } })} />
+      <ColorPicker
+        editor={editor}
+        show={colorPicker.show}
+        position={colorPicker.position}
+        onClose={() =>
+          setColorPicker({ show: false, position: { x: 0, y: 0 } })
+        }
+      />
 
       {/* 표 컨텍스트 메뉴 */}
-      <TableContextMenu editor={editor} show={tableMenu.show} position={tableMenu.position} onClose={() => setTableMenu({ show: false, position: { x: 0, y: 0 } })} />
+      <TableContextMenu
+        editor={editor}
+        show={tableMenu.show}
+        position={tableMenu.position}
+        onClose={() => setTableMenu({ show: false, position: { x: 0, y: 0 } })}
+      />
     </div>
   );
 }

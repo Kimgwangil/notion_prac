@@ -1,17 +1,21 @@
 import { Node, mergeAttributes } from "@tiptap/core";
-import { ReactNodeViewRenderer, NodeViewWrapper, NodeViewContent } from "@tiptap/react";
+import {
+  ReactNodeViewRenderer,
+  NodeViewWrapper,
+  NodeViewContent,
+} from "@tiptap/react";
 import React, { useState, useEffect } from "react";
 
 // 노션 스타일 토글 컴포넌트
 const NotionToggleComponent = ({ node, updateAttributes, editor, getPos }) => {
   const [isOpen, setIsOpen] = useState(node.attrs.isOpen ?? true);
 
-  // 상태 변경을 노드 속성에 동기화
+  // 상태 변경을 노드 속성에 동기화 (무한 루프 방지)
   useEffect(() => {
     if (node.attrs.isOpen !== isOpen) {
       updateAttributes({ isOpen });
     }
-  }, [isOpen, node.attrs.isOpen, updateAttributes]);
+  }, [isOpen, updateAttributes]);
 
   // 토글 버튼 클릭
   const toggleOpen = (e) => {
@@ -21,7 +25,8 @@ const NotionToggleComponent = ({ node, updateAttributes, editor, getPos }) => {
   };
 
   return (
-    <NodeViewWrapper className={`notion-toggle-wrapper ${isOpen ? 'open' : 'closed'}`}>
+    <NodeViewWrapper
+      className={`notion-toggle-wrapper ${isOpen ? "open" : "closed"}`}>
       {/* 토글 헤더 영역 - 화살표만 별도 처리 */}
       <div className="notion-toggle-header">
         <button
@@ -29,12 +34,11 @@ const NotionToggleComponent = ({ node, updateAttributes, editor, getPos }) => {
           onClick={toggleOpen}
           onMouseDown={(e) => e.stopPropagation()}
           type="button"
-          contentEditable={false}
-        >
+          contentEditable={false}>
           ▶
         </button>
       </div>
-      
+
       {/* 모든 내용을 TipTap으로 렌더링 - CSS로 제목/내용 분리 */}
       <div className="notion-toggle-content-wrapper">
         <NodeViewContent />
@@ -102,7 +106,7 @@ export const NotionToggle = Node.create({
         handler: ({ state, range, match }) => {
           const { tr, schema } = state;
           const { $from } = state.selection;
-          
+
           // 매칭된 텍스트 (> 이후의 텍스트)
           const titleText = match[1] || "";
           console.log("토글 생성 - 제목:", titleText);
@@ -110,31 +114,31 @@ export const NotionToggle = Node.create({
           // 현재 문단의 범위
           const nodeStart = $from.start($from.depth);
           const nodeEnd = $from.end($from.depth);
-          
+
           // 제목 문단 생성 (첫 번째 자식)
           const titleParagraph = schema.nodes.paragraph.create(
             { class: "notion-toggle-title" },
             titleText ? schema.text(titleText) : undefined
           );
-          
+
           // 빈 내용 문단 생성 (두 번째 자식)
           const contentParagraph = schema.nodes.paragraph.create();
-          
+
           // 토글 노드 생성 (제목 문단 + 내용 문단)
-          const toggleNode = this.type.create(
-            { isOpen: true },
-            [titleParagraph, contentParagraph]
-          );
+          const toggleNode = this.type.create({ isOpen: true }, [
+            titleParagraph,
+            contentParagraph,
+          ]);
 
           console.log("생성된 토글 노드:", toggleNode);
 
           // 문단을 토글로 교체
           tr.replaceWith(nodeStart, nodeEnd, toggleNode);
-          
+
           // 제목이 있으면 내용으로, 없으면 제목으로 커서 이동
           const toggleStart = nodeStart;
           let targetPos;
-          
+
           if (titleText) {
             // 제목이 있으면 내용 문단으로 이동
             targetPos = toggleStart + titleParagraph.nodeSize + 1;
@@ -142,10 +146,12 @@ export const NotionToggle = Node.create({
             // 제목이 없으면 제목 문단으로 이동
             targetPos = toggleStart + 1;
           }
-          
+
           console.log("커서 이동 위치:", targetPos);
-          tr.setSelection(state.selection.constructor.near(tr.doc.resolve(targetPos)));
-          
+          tr.setSelection(
+            state.selection.constructor.near(tr.doc.resolve(targetPos))
+          );
+
           return tr;
         },
       },
@@ -212,7 +218,7 @@ export const NotionToggle = Node.create({
             // 첫 번째 문단(제목)에서 아래 방향키 - 두 번째 문단(내용)으로 이동
             const currentChild = $from.node($from.depth);
             const toggleStart = $from.start(depth);
-            
+
             // 현재 위치가 첫 번째 자식(제목)이고 커서가 끝에 있으면
             if ($from.parentOffset === currentChild.content.size) {
               const firstChild = node.firstChild;
@@ -224,7 +230,7 @@ export const NotionToggle = Node.create({
             break;
           }
         }
-        
+
         return false;
       },
 
@@ -240,7 +246,7 @@ export const NotionToggle = Node.create({
             // 두 번째 문단(내용)에서 위 방향키 - 첫 번째 문단(제목)으로 이동
             const currentChild = $from.node($from.depth);
             const toggleStart = $from.start(depth);
-            
+
             // 현재 위치가 두 번째 자식이고 커서가 시작에 있으면
             if ($from.parentOffset === 0) {
               const firstChild = node.firstChild;
@@ -253,7 +259,7 @@ export const NotionToggle = Node.create({
             break;
           }
         }
-        
+
         return false;
       },
 
@@ -271,10 +277,15 @@ export const NotionToggle = Node.create({
               // 첫 번째 문단(제목)이 비어있으면 토글을 일반 문단으로 변경
               const firstChild = node.firstChild;
               const currentChild = $from.node($from.depth);
-              
-              if (firstChild && currentChild === firstChild && firstChild.content.size === 0) {
+
+              if (
+                firstChild &&
+                currentChild === firstChild &&
+                firstChild.content.size === 0
+              ) {
                 const togglePos = $from.start(depth) - 1;
-                return editor.commands.setTextSelection(togglePos)
+                return editor.commands
+                  .setTextSelection(togglePos)
                   .setNode("paragraph");
               }
               break;

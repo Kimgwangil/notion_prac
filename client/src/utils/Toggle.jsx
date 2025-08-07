@@ -1,6 +1,10 @@
 // client/src/utils/EnhancedToggle.js
 import { Node, mergeAttributes } from "@tiptap/core";
-import { ReactNodeViewRenderer, NodeViewWrapper, NodeViewContent } from "@tiptap/react";
+import {
+  ReactNodeViewRenderer,
+  NodeViewWrapper,
+  NodeViewContent,
+} from "@tiptap/react";
 import React, { useState, useEffect, useRef } from "react";
 
 // 토글 컴포넌트
@@ -24,20 +28,20 @@ const ToggleComponent = ({ node, updateAttributes, editor, getPos }) => {
       setTitle(newTitle);
       console.log("토글 제목 업데이트:", newTitle);
     }
-  }, [node.attrs.title, title]);
+  }, [node.attrs.title]);
 
-  // 상태 변경을 노드 속성에 동기화
+  // 상태 변경을 노드 속성에 동기화 (무한 루프 방지)
   useEffect(() => {
     if (node.attrs.isOpen !== isOpen) {
       updateAttributes({ isOpen });
     }
-  }, [isOpen, node.attrs.isOpen, updateAttributes]);
+  }, [isOpen, updateAttributes]);
 
   useEffect(() => {
     if (node.attrs.title !== title && title !== "") {
       updateAttributes({ title });
     }
-  }, [title, node.attrs.title, updateAttributes]);
+  }, [title, updateAttributes]);
 
   // 토글 버튼만 클릭했을 때 접기/펼치기
   const toggleOpen = (e) => {
@@ -70,7 +74,11 @@ const ToggleComponent = ({ node, updateAttributes, editor, getPos }) => {
         editor.commands.setTextSelection(pos - 1);
         editor.commands.focus();
       }
-    } else if (e.key === "ArrowLeft" && titleRef.current && titleRef.current.selectionStart === 0) {
+    } else if (
+      e.key === "ArrowLeft" &&
+      titleRef.current &&
+      titleRef.current.selectionStart === 0
+    ) {
       console.log("ArrowLeft 키 눌림 (제목 맨 앞)");
       e.preventDefault();
       // 제목 맨 앞에서 왼쪽 화살표 시 이전 블록으로 이동
@@ -79,7 +87,11 @@ const ToggleComponent = ({ node, updateAttributes, editor, getPos }) => {
         editor.commands.setTextSelection(pos - 1);
         editor.commands.focus();
       }
-    } else if (e.key === "ArrowRight" && titleRef.current && titleRef.current.selectionEnd === title.length) {
+    } else if (
+      e.key === "ArrowRight" &&
+      titleRef.current &&
+      titleRef.current.selectionEnd === title.length
+    ) {
       console.log("ArrowRight 키 눌림 (제목 맨 끝)");
       e.preventDefault();
       // 제목 맨 끝에서 오른쪽 화살표 시 토글 내용으로 이동
@@ -103,7 +115,11 @@ const ToggleComponent = ({ node, updateAttributes, editor, getPos }) => {
           const pos = $from.start(depth);
 
           // TipTap selection 이동
-          view.dispatch(state.tr.setSelection(state.selection.constructor.near(state.doc.resolve(pos))));
+          view.dispatch(
+            state.tr.setSelection(
+              state.selection.constructor.near(state.doc.resolve(pos))
+            )
+          );
           break;
         }
       }
@@ -112,7 +128,10 @@ const ToggleComponent = ({ node, updateAttributes, editor, getPos }) => {
       setTimeout(() => {
         if (titleRef.current) {
           titleRef.current.focus();
-          titleRef.current.setSelectionRange(titleRef.current.value.length, titleRef.current.value.length);
+          titleRef.current.setSelectionRange(
+            titleRef.current.value.length,
+            titleRef.current.value.length
+          );
         }
       }, 10);
     }
@@ -126,8 +145,7 @@ const ToggleComponent = ({ node, updateAttributes, editor, getPos }) => {
         if (e.target.tagName !== "INPUT") {
           console.log("NodeViewWrapper 클릭됨", e.target);
         }
-      }}
-    >
+      }}>
       <div
         className="toggle-header"
         onClick={(e) => {
@@ -135,8 +153,7 @@ const ToggleComponent = ({ node, updateAttributes, editor, getPos }) => {
           if (e.target.tagName !== "INPUT") {
             console.log("toggle-header 클릭됨", e.target);
           }
-        }}
-      >
+        }}>
         {/* 토글 버튼 (화살표) - 클릭 시에만 토글 */}
         <button
           className={`toggle-arrow ${isOpen ? "open" : ""}`}
@@ -145,8 +162,7 @@ const ToggleComponent = ({ node, updateAttributes, editor, getPos }) => {
             toggleOpen(e);
           }}
           onMouseDown={(e) => e.stopPropagation()}
-          type="button"
-        >
+          type="button">
           ▶
         </button>
 
@@ -280,7 +296,9 @@ const EnhancedToggle = Node.create({
           let titleText = fullText.replace(/>\s$/, "").trim();
 
           // 리스트 마커 제거 (-, 1., 2. 등)
-          titleText = titleText.replace(/^[-*+]?\s*/, "").replace(/^\d+\.\s*/, "");
+          titleText = titleText
+            .replace(/^[-*+]?\s*/, "")
+            .replace(/^\d+\.\s*/, "");
           console.log("토글 생성 - 제목 텍스트:", titleText);
 
           // 리스트 항목인지 확인
@@ -293,14 +311,19 @@ const EnhancedToggle = Node.create({
             const listItemEnd = $from.end($from.depth - 1);
 
             // 토글 노드 생성
-            const toggleNode = this.type.create({ isOpen: true, title: titleText }, schema.nodes.paragraph.create());
+            const toggleNode = this.type.create(
+              { isOpen: true, title: titleText },
+              schema.nodes.paragraph.create()
+            );
 
             // 리스트 항목을 토글로 교체
             tr.replaceWith(listItemStart, listItemEnd, toggleNode);
 
             // 토글 내부로 커서 이동
             const toggleContentPos = listItemStart + 1;
-            tr.setSelection(state.selection.constructor.near(tr.doc.resolve(toggleContentPos)));
+            tr.setSelection(
+              state.selection.constructor.near(tr.doc.resolve(toggleContentPos))
+            );
           } else {
             // 일반 문단에서 토글 생성
             tr.insertText("", range.from, range.to); // "> " 삭제
@@ -309,14 +332,19 @@ const EnhancedToggle = Node.create({
             const nodeEnd = $from.end($from.depth);
 
             // 토글 노드 생성
-            const toggleNode = this.type.create({ isOpen: true, title: titleText }, schema.nodes.paragraph.create());
+            const toggleNode = this.type.create(
+              { isOpen: true, title: titleText },
+              schema.nodes.paragraph.create()
+            );
 
             // 문단을 토글로 교체
             tr.replaceWith(nodeStart, nodeEnd, toggleNode);
 
             // 토글 내부로 커서 이동
             const toggleContentPos = nodeStart + 1;
-            tr.setSelection(state.selection.constructor.near(tr.doc.resolve(toggleContentPos)));
+            tr.setSelection(
+              state.selection.constructor.near(tr.doc.resolve(toggleContentPos))
+            );
           }
 
           return tr;
@@ -396,8 +424,16 @@ const EnhancedToggle = Node.create({
             // 토글이 비어있으면 토글을 문단으로 변경
             if (toggleNode.childCount === 1) {
               const firstChild = toggleNode.firstChild;
-              if (firstChild && firstChild.type.name === "paragraph" && firstChild.content.size === 0) {
-                return editor.chain().setTextSelection(togglePos).setNode("paragraph").run();
+              if (
+                firstChild &&
+                firstChild.type.name === "paragraph" &&
+                firstChild.content.size === 0
+              ) {
+                return editor
+                  .chain()
+                  .setTextSelection(togglePos)
+                  .setNode("paragraph")
+                  .run();
               }
             }
           }
